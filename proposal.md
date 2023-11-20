@@ -1,10 +1,11 @@
 # Project description
 
-My project will be about...
+My project is going to be a basic first person shooter
 
 ## Needs To Have List
-- thing 1
-- thing 2
+- character movement
+- shooting bullets
+- fairly well designed 3d models
 
 ## Nice to Have List
 - other thing 1
