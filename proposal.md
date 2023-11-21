@@ -1,6 +1,6 @@
 # Project description
 
-My project is going to be a basic first person shooter
+My project is going to be a basic first person shooter based on games like Valorant, and CSGO. 
 
 ## Needs To Have List
 
@@ -8,7 +8,7 @@ My project is going to be a basic first person shooter
 - ability to shoot bullets
 - fairly well designed 3d models
 - ability to zoom in to aim
-- something to shoot at
+- something to shoot at (enemies or targets)
 - appropriate lighting and sound effects             
 
 ## Nice to Have List
@@ -19,3 +19,4 @@ My project is going to be a basic first person shooter
 - a reload animation
 - make it not lag a lot
 - a scope graphic to aim
+- pick and drop items
