@@ -3,10 +3,14 @@
 My project is going to be a basic first person shooter
 
 ## Needs To Have List
-- character movement
+
+- basic character movement
 - shooting bullets
 - fairly well designed 3d models
+- zoom in for aiming
+- something to shoot at
 
 ## Nice to Have List
-- other thing 1
-- other thing 2
+
+- detailed character movement
+- multiplayer functionality
