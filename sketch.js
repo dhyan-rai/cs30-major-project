@@ -7,7 +7,7 @@
 
 
 let gun;
-let angle = 20;
+let angle = 0;
 
 function preload() {
   gun = loadModel("gun.obj", true);
@@ -18,13 +18,33 @@ function setup() {
 }
 
 function draw() {
-  orbitControl();
-  lights();
-  background(0);
+  background(51);
+
+  rectMode(CENTER);
   noStroke();
-  // rotateX(angle);
-  // rotateY(angle);
-  scale(1.8);
-  model(gun);
-  // angle += 0.02;
+  //fill("yellow");
+  let dx = mouseX - width/2;
+  let dy = mouseY - height/2;
+  let v = createVector(dx, dy, 0);
+  camera(0, 0, (height/2) / tan(PI/6) - 1000, dx, 0, 0, 0, 1, 0);
+  v.div(100);
+  directionalLight(255, 0, 0, v);
+  ambientLight(0, 0, 255);
+  specularMaterial(255);
+
+  //translate(mouseX - width/2, mouseY - height/2);
+  rotateX(angle);
+  rotateY(angle * 0.2);
+  rotateZ(angle * 0.5);
+  box(150);
+  angle += 0.01;
+  // orbitControl();
+  // lights();
+  // background(0);
+  // noStroke();
+  // // rotateX(angle);
+  // // rotateY(angle);
+  // scale(1.8);
+  // model(gun);
+  // // angle += 0.02;
 }
