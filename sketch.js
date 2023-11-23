@@ -22,23 +22,28 @@ function draw() {
 
   rectMode(CENTER);
   noStroke();
-  //fill("yellow");
+  rotateY(frameCount * 0.01);
   let dx = mouseX - width/2;
+  //noCursor();
+  //fill("yellow");
   let dy = mouseY - height/2;
-  let v = createVector(dx, dy, 0);
-  camera(0, 0, (height/2) / tan(PI/6) - 1000, dx, 0, 0, 0, 1, 0);
-  v.div(100);
-  directionalLight(255, 0, 0, v);
-  ambientLight(0, 0, 255);
+  let v = createVector(dx, dy, 1);
+  model(gun);
+  v.div(200);
+  pointLight(255, 255, 255, v);
   specularMaterial(255);
-
+  //push();
+  //camera(-dx, dy, height/2 / tan(PI/6) - 1000, -dx, dy, 0, 0, 1, 0);
+  //translate(-dx - 50, dy, height/2 / tan(PI/6) - 800);
+  //directionalLight(255, 255, 255, v);
+  //ambientLight(0, 0, 255);
+  //pop();
+  //orbitControl();
   //translate(mouseX - width/2, mouseY - height/2);
-  rotateX(angle);
-  rotateY(angle * 0.2);
-  rotateZ(angle * 0.5);
-  box(150);
-  angle += 0.01;
-  // orbitControl();
+  // rotateX(angle);
+  // rotateY(angle * 0.2);
+  // rotateZ(angle * 0.5);
+  
   // lights();
   // background(0);
   // noStroke();
