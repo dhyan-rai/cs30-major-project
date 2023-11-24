@@ -1,6 +1,6 @@
 # Project description
 
-My project is going to be a basic first person shooter based on games like Valorant, and CSGO. 
+My project is going to be a basic 3D first person shooter based on games like Valorant and CSGO. Users can move around using WASD keys and can interact with the environment. They can shoot at targets or enemies to eliminate them. In multiplayer mode, players can shoot at each other and decrease their health.
 
 ## Needs To Have List
 
