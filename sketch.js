@@ -22,7 +22,14 @@ function draw() {
 
   rectMode(CENTER);
   noStroke();
-  rotateY(frameCount * 0.01);
+  push();
+  rotateX(PI/2);
+  plane();
+  pop();
+  push();
+  rotateY(PI);
+  //ambientLight(0, 0, 255);
+  translate(mouseX - width/2 + 70, mouseY - height/2, 380);
   let dx = mouseX - width/2;
   //noCursor();
   //fill("yellow");
@@ -30,15 +37,15 @@ function draw() {
   let v = createVector(dx, dy, 1);
   model(gun);
   v.div(200);
-  pointLight(255, 255, 255, v);
-  specularMaterial(255);
+  //pointLight(255, 255, 255, v);
+  normalMaterial();
+  //specularMaterial(255);
+  pop();
   //push();
-  //camera(-dx, dy, height/2 / tan(PI/6) - 1000, -dx, dy, 0, 0, 1, 0);
-  //translate(-dx - 50, dy, height/2 / tan(PI/6) - 800);
+  camera(-dx, dy, height/2 / tan(PI/6) - 1000, -dx, dy, 0, 0, 1, 0);
   //directionalLight(255, 255, 255, v);
-  //ambientLight(0, 0, 255);
   //pop();
-  //orbitControl();
+  orbitControl();
   //translate(mouseX - width/2, mouseY - height/2);
   // rotateX(angle);
   // rotateY(angle * 0.2);

@@ -6,7 +6,7 @@ My project is going to be a basic 3D first person shooter based on games like Va
 
 - basic character movement
 - ability to shoot bullets
-- fairly well designed 3d models
+- fairly well designed 3d models (imported and cutsom created)
 - ability to zoom in to aim
 - something to shoot at (enemies or targets)
 - appropriate lighting and sound effects             
