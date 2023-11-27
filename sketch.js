@@ -8,55 +8,37 @@
 
 let gun;
 let angle = 0;
+let rover;
 
 function preload() {
   gun = loadModel("gun.obj", true);
 }
 
 function setup() {
+  angleMode(DEGREES);
   createCanvas(windowWidth, windowHeight, WEBGL);
+
+  //rover 
+  //createCanvas(800, 800, WEBGL);
+  rover = createRoverCam();
+  rover.usePointerLock();    // optional; default is keyboard control only
+  rover.setState({           // optional
+    position: [0, (height/2) / tan(PI/6),0],
+    rotation: [0.4,0.3,0],
+    sensitivity: 0.1,
+    speed: 0.5
+  });
 }
 
 function draw() {
   background(51);
-
-  rectMode(CENTER);
   noStroke();
-  push();
-  rotateX(PI/2);
-  plane();
-  pop();
-  push();
-  rotateY(PI);
-  //ambientLight(0, 0, 255);
-  translate(mouseX - width/2 + 70, mouseY - height/2, 380);
-  let dx = mouseX - width/2;
-  //noCursor();
-  //fill("yellow");
-  let dy = mouseY - height/2;
-  let v = createVector(dx, dy, 1);
-  model(gun);
-  v.div(200);
-  //pointLight(255, 255, 255, v);
-  normalMaterial();
-  //specularMaterial(255);
-  pop();
-  //push();
-  camera(-dx, dy, height/2 / tan(PI/6) - 1000, -dx, dy, 0, 0, 1, 0);
-  //directionalLight(255, 255, 255, v);
-  //pop();
-  orbitControl();
-  //translate(mouseX - width/2, mouseY - height/2);
-  // rotateX(angle);
-  // rotateY(angle * 0.2);
-  // rotateZ(angle * 0.5);
-  
-  // lights();
-  // background(0);
-  // noStroke();
-  // // rotateX(angle);
-  // // rotateY(angle);
-  // scale(1.8);
-  // model(gun);
-  // // angle += 0.02;
+
+  //ground
+  // push();
+  //rotateX(90);
+  box(10);
+  // pop();
+
+  //orbitControl();
 }
