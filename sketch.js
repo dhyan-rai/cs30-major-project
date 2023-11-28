@@ -10,35 +10,53 @@ let gun;
 let angle = 0;
 let rover;
 
+class Player extends RoverCam {
+  constructor(instance) {
+    super(instance);
+    this.keyMap.mz1[0] = 32;
+    this.keyMap.mz2[0] = 16;
+    this.keyMap.mz1[1] = 32;
+    this.keyMap.mz2[1] = 16;
+  }
+  usePointerLock(instance) {
+    if(instance === undefined) instance = p5.instance;
+    if(instance === null) return;
+    RoverCam.canvas = instance._renderer.elt;
+    // ffd8 - click into pointerlock example based on:
+    // https://p5js.org/reference/#/p5/exitPointerLock
+    document.addEventListener('click', () => {
+      if (!RoverCam.pointerLock) {
+        RoverCam.pointerLock = true;
+        instance.requestPointerLock();
+      } 
+      // else {
+      //   instance.exitPointerLock();
+      //   RoverCam.pointerLock = false;
+      // }
+    }, false);
+    document.addEventListener('pointerlockchange', RoverCam.onPointerlockChange, false);
+  }
+}
+
+
 function preload() {
   gun = loadModel("gun.obj", true);
 }
 
 function setup() {
-  angleMode(DEGREES);
   createCanvas(windowWidth, windowHeight, WEBGL);
-
-  //rover 
-  //createCanvas(800, 800, WEBGL);
-  rover = createRoverCam();
-  rover.usePointerLock();    // optional; default is keyboard control only
-  rover.setState({           // optional
-    position: [0, (height/2) / tan(PI/6),0],
+  let rover = new Player();
+  rover.usePointerLock();
+  rover.setState({position:[-400,-200,height/2 / tan(PI/6)],
     rotation: [0.4,0.3,0],
-    sensitivity: 0.1,
-    speed: 0.5
-  });
+    speed: 10});
 }
-
 function draw() {
   background(51);
   noStroke();
-
-  //ground
-  // push();
-  //rotateX(90);
-  box(10);
-  // pop();
-
-  //orbitControl();
+  box(150);
+  push();
+  rotateX(PI/2);
+  plane(1000);
+  pop();
 }
