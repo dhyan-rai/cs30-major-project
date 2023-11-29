@@ -22,8 +22,7 @@ class Player extends RoverCam {
     if(instance === undefined) instance = p5.instance;
     if(instance === null) return;
     RoverCam.canvas = instance._renderer.elt;
-    // ffd8 - click into pointerlock example based on:
-    // https://p5js.org/reference/#/p5/exitPointerLock
+
     document.addEventListener('click', () => {
       if (!RoverCam.pointerLock) {
         RoverCam.pointerLock = true;
@@ -54,7 +53,10 @@ function setup() {
 function draw() {
   background(51);
   noStroke();
+  push();
+  fill("red");
   box(150);
+  pop();
   push();
   rotateX(PI/2);
   plane(1000);

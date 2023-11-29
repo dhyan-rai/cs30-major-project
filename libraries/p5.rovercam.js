@@ -89,8 +89,8 @@ class RoverCam {
     if (p.keyIsDown(k.f2[0]) || p.keyIsDown(k.f2[1])) this.fov(this.sensitivity / 10); // -
 
     // test roll TBD
-    //if(p.keyIsDown(k.r1[0]) || p.keyIsDown(k.r1[1])) this.roll(this.sensitivity);  // z
-    //if(p.keyIsDown(k.r2[0]) || p.keyIsDown(k.r2[1])) this.roll(-this.sensitivity); // c
+    // if(p.keyIsDown(k.r1[0]) || p.keyIsDown(k.r1[1])) this.roll(this.sensitivity);  // z
+    // if(p.keyIsDown(k.r2[0]) || p.keyIsDown(k.r2[1])) this.roll(-this.sensitivity); // c
   }
 
   // Primitive internal camera control methods
