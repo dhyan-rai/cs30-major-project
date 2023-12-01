@@ -96,11 +96,9 @@ class RoverCam {
   // Primitive internal camera control methods
   moveX(speed) {
     this.velocity.add(p5.Vector.mult(this.forward, speed));
-    this.velocity.y = 0;
   }
   moveY(speed) {
     this.velocity.add(p5.Vector.mult(this.right, speed));
-    this.velocity.y = 0;
   }
   moveZ(speed) {
     this.velocity.add(p5.Vector.mult(this.up, -speed));
@@ -191,6 +189,7 @@ class RoverCam {
 
     this.forward = new p5.Vector(Math.cos(this.pan), Math.tan(this.tilt), Math.sin(this.pan));
     this.forward.normalize();
+
     this.right = new p5.Vector(Math.cos(this.pan - Math.PI / 2.0), 0, Math.sin(this.pan - Math.PI / 2.0));
     // TBD: handle roll command (using this.rot)
 

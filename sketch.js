@@ -46,7 +46,7 @@ class Player extends RoverCam {
     // Call the potentially overridden controller method
     this.controller();
 
-    this.forward = new p5.Vector(Math.cos(this.pan), Math.tan(this.tilt), Math.sin(this.pan));
+    this.forward = new p5.Vector(Math.cos(this.pan), 0, Math.sin(this.pan));
     this.forward.normalize();
     this.right = new p5.Vector(Math.cos(this.pan - Math.PI / 2.0), 0, Math.sin(this.pan - Math.PI / 2.0));
     // TBD: handle roll command (using this.rot)
