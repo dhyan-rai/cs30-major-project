@@ -72,8 +72,8 @@ class RoverCam {
       this.pitch(p.movedY * this.sensitivity / 10); // mouse up/down
       if (p.keyIsDown(k.my1[0]) || p.keyIsDown(k.my1[1])) this.moveY( this.speed); // a
       if (p.keyIsDown(k.my2[0]) || p.keyIsDown(k.my2[1])) this.moveY(-this.speed); // d
-      if (p.keyIsDown(k.e1[0]) || p.keyIsDown(k.e1[1])) this.elevate(-this.speed); // r
-      if (p.keyIsDown(k.e2[0]) || p.keyIsDown(k.e2[1])) this.elevate(this.speed); // f
+      // if (p.keyIsDown(k.e1[0]) || p.keyIsDown(k.e1[1])) this.elevate(-this.speed); // r
+      // if (p.keyIsDown(k.e2[0]) || p.keyIsDown(k.e2[1])) this.elevate(this.speed); // f
     } else { // otherwise yaw/pitch with keys
       if (p.keyIsDown(k.y1[0]) || p.keyIsDown(k.y1[1])) this.yaw(-this.sensitivity); // a
       if (p.keyIsDown(k.y2[0]) || p.keyIsDown(k.y2[1])) this.yaw(this.sensitivity); // d
@@ -82,8 +82,8 @@ class RoverCam {
     }
     if (p.keyIsDown(k.mx1[0]) || p.keyIsDown(k.mx1[1])) this.moveX(this.speed); // w
     if (p.keyIsDown(k.mx2[0]) || p.keyIsDown(k.mx2[1])) this.moveX(-this.speed); // s
-    if (p.keyIsDown(k.mz1[0]) || p.keyIsDown(k.mz1[1])) this.moveZ(this.speed); // e
-    if (p.keyIsDown(k.mz2[0]) || p.keyIsDown(k.mz2[1])) this.moveZ(-this.speed); // q
+    // if (p.keyIsDown(k.mz1[0]) || p.keyIsDown(k.mz1[1])) this.moveZ(this.speed); // e
+    // if (p.keyIsDown(k.mz2[0]) || p.keyIsDown(k.mz2[1])) this.moveZ(-this.speed); // q
 
     if (p.keyIsDown(k.f1[0]) || p.keyIsDown(k.f1[1])) this.fov(-this.sensitivity / 10); // +
     if (p.keyIsDown(k.f2[0]) || p.keyIsDown(k.f2[1])) this.fov(this.sensitivity / 10); // -
@@ -152,7 +152,7 @@ class RoverCam {
     this.up = new p5.Vector(0, 1, 0);
     this.right = new p5.Vector(1, 0, 0);
     this.forward = new p5.Vector(0, 0, 1);
-    this.offset = [0,0]; // ffd8 - adjust height of cam
+    this.offset = [0, 0]; // ffd8 - adjust height of cam
   }
   setActive(active){ // method to switch between multiple cameras
     this.active = active;
