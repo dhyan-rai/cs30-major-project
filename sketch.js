@@ -13,6 +13,11 @@ let touchingGround = false;
 let isJumping = false;
 let canJump = true;
 let jumpForce;
+let maxSubSteps = 3;
+let fixedTimeStep = 1/10;
+let lastTime;
+let world, body, ground;
+
 
 class Player extends RoverCam {
   constructor(instance) {
@@ -23,7 +28,7 @@ class Player extends RoverCam {
     this.keyMap.mz2[1] = 16;
     this.gravity = createVector(0, 1, 0);
     this.friction = 0.6;
-    this.yFric = 0.6
+    this.yFric = 0.6;
   }
   usePointerLock(instance) {
     if(instance === undefined) instance = p5.instance;
@@ -92,6 +97,19 @@ function preload() {
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
 
+  //setting up physics world
+  world = new CANNON.World();
+  world.gravity.set(0, -9.82, 0);
+
+  //adding a body
+  body = new CANNON.Body({
+    mass: 500, // kg
+    position: new CANNON.Vec3(0, -500, 0), // m
+    shape: new CANNON.Sphere(new CANNON.Vec3(50))
+  });
+  world.addBody(body);
+
+
   //creating vectors
   jumpForce = createVector(0, -4, 0);
 
@@ -101,11 +119,38 @@ function setup() {
     //rotation: [0.4,0.3,0],
     offset: [-250, 0],
     speed: 10});
+
+  //creating a ground
+  ground = new CANNON.Body({
+    mass: 0 // mass=0 will produce a static body automatically
+  });
+  ground.addShape(new CANNON.Plane());
+  ground.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), PI/3);
+  world.addBody(ground);
+  lastTime = second();
+
+  body.position.x = rover.position.x;
+  body.position.y = rover.position.y;
+  body.position.z = rover.position.z;
 }
+
 function draw() {
+
+  // rotateX(PI);
+
+  if (lastTime !== undefined) {
+    //var dt = (time - lastTime) / 1000;
+    let dt = (second() - lastTime) / 1000;
+    world.step(fixedTimeStep, dt, maxSubSteps);
+  }
+
+  lastTime = second();
+
+
+
   applyGravity();
   background(51);
-  // noStroke();
+  noStroke();
   push();
   fill("red");
   translate(0, -100, 0);
@@ -123,6 +168,37 @@ function draw() {
   applyGravity();
   checkJumping();
   jump();
+
+
+  // //body
+  // push();
+  // fill(100,100,255);
+  // stroke(50,50,127);
+  // body.position.x = rover.position.x;
+  // body.position.y = rover.position.y;
+  // body.position.z = rover.position.z;
+  // translate(body.position.x,body.position.y,body.position.z);
+  // let rot=new CANNON.Vec3();
+  // body.quaternion.toEuler(rot);
+  // rotateY(rot.y);
+  // rotateZ(rot.z);
+  // rotateX(rot.x);
+  // box(100);
+  // pop();
+
+  // // //ground
+  // push();
+  // noStroke();
+  // fill(64);
+  // translate(ground.position.x,ground.position.y,ground.position.z);
+  // ground.quaternion.toEuler(rot);
+  // rotateY(rot.y);
+  // rotateZ(rot.z);
+  // rotateX(rot.x);
+  // plane(1000);
+  // pop();  
+
+  lastTime = second();
 
 
 }
