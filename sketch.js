@@ -6,10 +6,8 @@
 // - describe what you did to take this project "above and beyond"
 
 let player;
-let shared;
-let mouseShared;
 let ball;
-
+let obstacle;
 
 class Ball {
   constructor(x, y) {
@@ -27,58 +25,58 @@ function preload() {
 
 
   //connecting to a party
-  partyConnect("wss://demoserver.p5party.org", "testing p5party");
-  shared = partyLoadShared("shared", new Sprite());
 }
 
 function setup() {
   // createCanvas(windowWidth, windowHeight);
   new Canvas();
-  // ball = new Sprite();
-  // ball.diameter = shared.diameter;
-  // ball.color = "black";
-  // ball.vel.x = shared.vel.x;
-  // ball.vel.y = shared.vel.y;
+  ball = new Sprite(width/2, height/2, 50);
+  // ball.debug = true;
+  ball.color = "black";
+  ball.mass = 100;
+
+  obstacle = new Sprite(100, 100, 40, 40);
+  obstacle.color = "green";
+  obstacle.mass = 100;
+  obstacle.rotationLock = true;
   
 }
 
 function draw() {
-  update();
   background(220);
   clear();
-  // circle(shared.x, shared.y, 20);
-  // checkMovement();
+  checkMovement();
 }
 
 function checkMovement() {
   if (keyIsPressed) {
-    if (keyIsDown(87)) {
-      shared.vel.y = -6;
+    if (kb.presses("w")) {
+      ball.vel.y = -6;
     }
-    if (keyIsDown(83)) {
-      shared.vel.y = 6;
+    if (kb.presses("s")) {
+      ball.vel.y = 6;
     }
-    if (keyIsDown(65)) {
-      shared.vel.x = -6;
+    if (kb.presses("a")) {
+      ball.vel.x = -6;
     }
-    if (keyIsDown(68)) {
-      shared.vel.x = 6;
+    if (kb.presses("d")) {
+      ball.vel.x = 6;
     }
   }
   else {
-    shared.vel.y = 0;
-    shared.vel.x = 0;
+    ball.vel.y = 0;
+    ball.vel.x = 0;
   }
 }
 
-// function mousePressed() {
-//   shared.x = mouseX;
-//   shared.y = mouseY;
-// }
-
-function update() {
-  ball.vel.x = shared.vel.x;
-  ball.vel.y = shared.vel.y;
-  ball.diameter = shared.diameter;
+function drawBullet() {
+  let x = mouseX - width / 2;
+  let y = mouseY - height / 2;
+  let a = atan2(y, x);
+  push();
+  rotate(a);
 }
+
+
+
 
