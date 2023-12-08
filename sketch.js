@@ -29,13 +29,20 @@ function preload() {
 
 function setup() {
   // createCanvas(windowWidth, windowHeight);
+
+  partyConnect(
+		"wss://demoserver.p5party.org", 
+		"p5party-integration-with-p5playssdfsdfsdfsdfsdfsdf"
+	);
+
+
   new Canvas();
   ball = new Sprite(width/2, height/2, 50);
   // ball.debug = true;
   ball.color = "black";
   ball.mass = 100;
 
-  obstacle = new Sprite(100, 100, 40, 40);
+  obstacle = new Sprite(200, 200, 40, 40);
   obstacle.color = "green";
   obstacle.mass = 100;
   obstacle.rotationLock = true;
