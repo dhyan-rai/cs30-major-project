@@ -7,7 +7,8 @@
 
 let player;
 let ball;
-let obstacle;
+let obstacle1, obstacle2, obstacle3, obstacle4;
+let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
 
 class Ball {
   constructor(x, y) {
@@ -25,7 +26,7 @@ function setup() {
   ball = new Sprite(width/2, height/2, 50);
   // ball.debug = true;
   ball.color = "black";
-  ball.mass = 100;
+  ball.mass = 0;
   ball.collider = "d";
   ball.bounciness = 0;
   // ball.debug = true;
@@ -33,13 +34,12 @@ function setup() {
   ball.friction = 0;
   ball.drag = 0;
 
-  obstacle = new Sprite(400, 400, 40, 40, "k");
-  obstacle.color = "green";
-  obstacle.mass = 100;
-  obstacle.rotationLock = true;
-  obstacle.bounciness = 0;
-  obstacle.friction = 0;
-  obstacle.drag = 0;
+  for (let i = 0; i <= 4; i++) {
+    obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
+    obstacles[i].rotationLock = true;
+    obstacles[i].bounciness = 0;
+    obstacles[i].friction = 0;
+  }
   
 }
 
@@ -48,36 +48,37 @@ function draw() {
   clear();
 
   checkMovement();
-  retainPosition();
+  // retainPosition();
 }
 
 function checkMovement() {
-  if (keyIsDown) {
+  if (keyIsPressed) {
     if (kb.presses("w")) {
       ball.vel.y = -6;
-      ball.vel.x = 0;
+      // ball.vel.x = 0;
       // ball.move(20);
       // ball.direction = -90;
     }
     if (kb.presses("s")) {
       ball.vel.y = 6;
-      ball.vel.x = 0;
+      // ball.vel.x = 0;
       // ball.direction = 90;
     }
     if (kb.presses("a")) {
       ball.vel.x = -6;
-      ball.vel.y = 0;
+      // ball.vel.y = 0;
       // ball.direction = 180;
     }
     if (kb.presses("d")) {
       ball.vel.x = 6;
-      ball.vel.y = 0;
+      // ball.vel.y = 0;
       // ball.direction = 0;
     }
   }
   else {
     ball.vel.x = 0;
     ball.vel.y = 0;
+    console.log("working");
   }
 
 }
@@ -92,7 +93,7 @@ function drawBullet() {
 
 
 
-function retainPosition() {
-  obstacle.vel.x = 0;
-  obstacle.vel.y = 0;
-}
+// function retainPosition() {
+//   obstacle.pos.x = width/2;
+//   obstacle.pos.y = height/2;
+// }
