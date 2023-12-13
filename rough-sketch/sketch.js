@@ -18,12 +18,10 @@ class Ball {
 }
 
 function setup() {
-  // createCanvas(windowWidth, windowHeight);
-
-
+  // createCanvas(windowWidth, windowHeight)
 
   new Canvas();
-  ball = new Sprite(width/2, height/2, 50);
+  ball = new Sprite(width/2, height/2, 105);
   // ball.debug = true;
   ball.color = "black";
   ball.mass = 0;
@@ -33,6 +31,9 @@ function setup() {
   ball.rotationLock = true;
   ball.friction = 0;
   ball.drag = 0;
+  ball.img = "assets/ball-img.png";
+  // ball.debug = true;
+  ball.scale = 0.5
 
   for (let i = 0; i <= 4; i++) {
     obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
@@ -48,37 +49,41 @@ function draw() {
   clear();
 
   checkMovement();
+  updateRotation();
   // retainPosition();
 }
 
 function checkMovement() {
   if (keyIsPressed) {
-    if (kb.presses("w")) {
-      ball.vel.y = -6;
-      // ball.vel.x = 0;
-      // ball.move(20);
-      // ball.direction = -90;
+    let spd = 3.7;
+    if (keyIsDown(87)) {
+      ball.moveTowards(ball.position.x, ball.position.y - 1, spd);
     }
-    if (kb.presses("s")) {
-      ball.vel.y = 6;
-      // ball.vel.x = 0;
-      // ball.direction = 90;
+    if (keyIsDown(83)) {
+      ball.moveTowards(ball.position.x, ball.position.y + 1, spd);
     }
-    if (kb.presses("a")) {
-      ball.vel.x = -6;
-      // ball.vel.y = 0;
-      // ball.direction = 180;
+    if (keyIsDown(68)) {
+      ball.moveTowards(ball.position.x + 1, ball.position.y, spd);
     }
-    if (kb.presses("d")) {
-      ball.vel.x = 6;
-      // ball.vel.y = 0;
-      // ball.direction = 0;
+    if (keyIsDown(65)) {
+      ball.moveTowards(ball.position.x - 1, ball.position.y, spd);
+    }
+    if (keyIsDown(87) && keyIsDown(68)) {
+      ball.moveTowards(ball.position.x + 1, ball.position.y - 1, spd);
+    }
+    if (keyIsDown(87) && keyIsDown(65)) {
+      ball.moveTowards(ball.position.x - 1, ball.position.y - 1, spd);
+    }
+    if (keyIsDown(83) && keyIsDown(68)) {
+      ball.moveTowards(ball.position.x + 1, ball.position.y + 1, spd);
+    }
+    if (keyIsDown(83) && keyIsDown(65)) {
+      ball.moveTowards(ball.position.x - 1, ball.position.y + 1, spd);
     }
   }
   else {
     ball.vel.x = 0;
     ball.vel.y = 0;
-    console.log("working");
   }
 
 }
@@ -90,6 +95,9 @@ function drawBullet() {
   rotate(a);
 }
 
+function updateRotation() {
+  ball.rotateTowards(mouse, 0.1, 0);
+}
 
 
 
