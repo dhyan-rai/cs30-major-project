@@ -31,7 +31,10 @@ function setup() {
   ball.rotationLock = true;
   ball.friction = 0;
   ball.drag = 0;
-  ball.img = "assets/ball-img.png";
+  ball.img = "assets/character.png";
+  ball.addAni("punch", "assets/player-animation/player01.png", 10);
+  ball.ani.stop();
+  ball.ani.frame = 0;
   // ball.debug = true;
   ball.scale = 0.5
 
@@ -86,6 +89,14 @@ function checkMovement() {
     ball.vel.y = 0;
   }
 
+  // if(mouseIsPressed) {
+  //   ball.ani.play();
+  // }
+  // else {
+  //   ball.ani.frame = 0;
+  //   ball.ani.stop();
+  // }
+
 }
 
 function drawBullet() {
@@ -96,7 +107,7 @@ function drawBullet() {
 }
 
 function updateRotation() {
-  ball.rotateTowards(mouse, 0.1, 0);
+  ball.rotateTowards(mouse, 1.2, 1);
 }
 
 
