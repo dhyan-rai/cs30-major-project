@@ -9,6 +9,7 @@ let player;
 let ball;
 let obstacle1, obstacle2, obstacle3, obstacle4;
 let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
+let gun;
 
 class Ball {
   constructor(x, y) {
@@ -21,22 +22,32 @@ function setup() {
   // createCanvas(windowWidth, windowHeight)
 
   new Canvas();
+
+  //creating player sprite
   ball = new Sprite(width/2, height/2, 105);
   // ball.debug = true;
   ball.color = "black";
-  ball.mass = 0;
+  ball.mass = 1;
   ball.collider = "d";
   ball.bounciness = 0;
   // ball.debug = true;
   ball.rotationLock = true;
   ball.friction = 0;
   ball.drag = 0;
-  ball.img = "assets/character.png";
-  ball.addAni("punch", "assets/player-animation/player01.png", 10);
-  ball.ani.stop();
-  ball.ani.frame = 0;
-  // ball.debug = true;
-  ball.scale = 0.5
+  ball.img = "assets/ball-img.png";
+  ball.scale = 0.5;
+
+  //creating gun
+  gun = new Sprite();
+  gun.width = 50;
+  gun.height = 10;
+  gun.mass = 20;
+  gun.collider = "k";
+  gun.bounciness = 0;
+  gun.offset.x = 25;
+  gun.pos.x = ball.pos.x;
+  
+
 
   for (let i = 0; i <= 4; i++) {
     obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
@@ -52,7 +63,7 @@ function draw() {
   clear();
 
   checkMovement();
-  updateRotation();
+  // updateRotation();
   // retainPosition();
 }
 
