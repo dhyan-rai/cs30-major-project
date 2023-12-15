@@ -1,6 +1,6 @@
 # Project description
 
-My project is a 2D Battle Royale style game with core gameplay and mechanics being based on games like Fortnite or PUBG. It is a multiplayer game where players spawn at different locations on a huge map and have to gather resources from their surroundings (chests and crates) to both survive and eliminate opponents. Players also have to look out for the storm/zone that slowly approaches the middle of the map, pushing players to the mdidle. The last one standing wins.
+My project is a 2D Battle Royale style game with core gameplay and mechanics being based on games like Fortnite or PUBG. It is a game where the player and bots spawn at different locations on a huge map and have to gather resources from their surroundings (chests and crates) to both survive and eliminate opponents. The player has to look out for the storm/zone that slowly approaches the middle of the map, pushing players to the mdidle. The last one standing wins.
 
 ## Needs To Have List
 

@@ -10,7 +10,9 @@ let ball;
 let obstacle1, obstacle2, obstacle3, obstacle4;
 let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
 let guns;
-let mag;
+
+//initializing guns
+let ar15, mg4, ak47;
 
 class Ball {
   constructor(x, y) {
@@ -25,6 +27,7 @@ function preload() {
 
 function setup() {
   // createCanvas(windowWidth, windowHeight)
+  // allSprites.autoDraw = false;
 
   new Canvas();
   //creating player sprite
@@ -40,26 +43,28 @@ function setup() {
   ball.drag = 0;
   ball.img = "assets/ball-img.png";
   ball.scale = 0.5;
-  ball.layer = 3;
+  ball.layer = 5;
 
   //creating gun
   guns = new Group();
   guns.width = 50;
   guns.height = 10;
   guns.mass = 20;
-  guns.collider = "n";
-  guns.bounciness = 0;
+  guns.collider = "k";
   guns.offset.x = 25;
   guns.layer = 1;
+  guns.equipped = false;
 
-  mag = new guns.Sprite();
-  mag.pos.x = 100;
-  mag.pos.y = 100;
+  //guns creation
+  ar15 = new guns.Sprite();
+  ar15.pos.x = 100;
+  ar15.pos.y = 100;
+  
 
 
   for (let i = 0; i <= 16; i++) {
     obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
-    obstacles[i].rotationLock = true;
+    // obstacles[i].rotationLock = true;
     obstacles[i].bounciness = 0;
     obstacles[i].friction = 0;
   }
@@ -68,13 +73,12 @@ function setup() {
 
 function draw() {
   clear();
-  background(bg);
+  background(20);
 
-  camera.x = ball.x;
-  camera.y = ball.y;
-  updatePlayerMovement();
   updateGuns();
+  updatePlayerMovement();
   updateRotation();
+  ball.draw();
 }
 
 function updatePlayerMovement() {
@@ -142,14 +146,20 @@ function updateRotation() {
 
 function updateGuns() {
   for (let gun of guns) {
-    if(dist(ball.pos.x, ball.pos.y, gun.pos.x, gun.pos.y) < 5) {
+    if (gun.equipped === false && mouseIsPressed) {
       equipGun(gun, ball);
-      gun.rotateTowards(mouse, 1.2, 1);
-    }    
+    }
   }
 }
 
 function equipGun(gun, player) {
   gun.pos.x = player.pos.x;
   gun.pos.y = player.pos.y;
+  gun.rotation = ball.rotation;
+  // let j = new GlueJoint(player, gun);
+  gun.equipped = true;
+}
+
+function unequipGun() {
+
 }
