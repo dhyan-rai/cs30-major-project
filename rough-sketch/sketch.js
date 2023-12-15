@@ -9,7 +9,8 @@ let player;
 let ball;
 let obstacle1, obstacle2, obstacle3, obstacle4;
 let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
-let gun;
+let guns;
+let mag;
 
 class Ball {
   constructor(x, y) {
@@ -18,11 +19,14 @@ class Ball {
   }
 }
 
+function preload() {
+  bg = loadImage("assets/battle-royale-map1.png");
+}
+
 function setup() {
   // createCanvas(windowWidth, windowHeight)
 
   new Canvas();
-
   //creating player sprite
   ball = new Sprite(width/2, height/2, 105);
   // ball.debug = true;
@@ -36,20 +40,24 @@ function setup() {
   ball.drag = 0;
   ball.img = "assets/ball-img.png";
   ball.scale = 0.5;
+  ball.layer = 3;
 
   //creating gun
-  gun = new Sprite();
-  gun.width = 50;
-  gun.height = 10;
-  gun.mass = 20;
-  gun.collider = "k";
-  gun.bounciness = 0;
-  gun.offset.x = 25;
-  gun.pos.x = ball.pos.x;
-  
+  guns = new Group();
+  guns.width = 50;
+  guns.height = 10;
+  guns.mass = 20;
+  guns.collider = "n";
+  guns.bounciness = 0;
+  guns.offset.x = 25;
+  guns.layer = 1;
+
+  mag = new guns.Sprite();
+  mag.pos.x = 100;
+  mag.pos.y = 100;
 
 
-  for (let i = 0; i <= 4; i++) {
+  for (let i = 0; i <= 16; i++) {
     obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
     obstacles[i].rotationLock = true;
     obstacles[i].bounciness = 0;
@@ -59,15 +67,17 @@ function setup() {
 }
 
 function draw() {
-  background(220);
   clear();
+  background(bg);
 
-  checkMovement();
-  // updateRotation();
-  // retainPosition();
+  camera.x = ball.x;
+  camera.y = ball.y;
+  updatePlayerMovement();
+  updateGuns();
+  updateRotation();
 }
 
-function checkMovement() {
+function updatePlayerMovement() {
   if (keyIsPressed) {
     let spd = 3.7;
     if (keyIsDown(87)) {
@@ -119,7 +129,9 @@ function drawBullet() {
 
 function updateRotation() {
   ball.rotateTowards(mouse, 1.2, 1);
+  // gun.rotateTowards(mouse, 1.2, 1);
 }
+
 
 
 
@@ -127,3 +139,17 @@ function updateRotation() {
 //   obstacle.pos.x = width/2;
 //   obstacle.pos.y = height/2;
 // }
+
+function updateGuns() {
+  for (let gun of guns) {
+    if(dist(ball.pos.x, ball.pos.y, gun.pos.x, gun.pos.y) < 5) {
+      equipGun(gun, ball);
+      gun.rotateTowards(mouse, 1.2, 1);
+    }    
+  }
+}
+
+function equipGun(gun, player) {
+  gun.pos.x = player.pos.x;
+  gun.pos.y = player.pos.y;
+}

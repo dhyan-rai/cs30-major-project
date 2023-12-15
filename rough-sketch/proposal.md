@@ -12,7 +12,7 @@ My project is a 2D Battle Royale style game with core gameplay and mechanics bei
 - smooth bullet physics
 - a "you died" screen and a "you win" screen
 - well designed map
-- multiplayer functionality
+- realistic player-like AI
 - a timer that shows how long you have left
 
 ## Nice to Have List
@@ -26,3 +26,4 @@ My project is a 2D Battle Royale style game with core gameplay and mechanics bei
 - a chat showing who eliminated who
 - improved inventory management
 - a clean looking GUI
+- multiplayer functionality
