@@ -16,6 +16,10 @@ let globalBullets = [];
 //initializing guns
 let shotgun, sniper, ak47;
 
+
+//temp vars
+let ball;
+
 class Player {
   constructor(x, y) {
     this.x = x;
@@ -28,11 +32,11 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight)
+  // createCanvas(windowWidth, windowHeight, WEBGL);
   // allSprites.autoDraw = false
   angleMode(DEGREES);
 
-  // new Canvas();
+  new Canvas();
   //creating player sprite
   player = new Sprite(width/2, height/2, 105);
   // player.debug = true;
@@ -88,30 +92,36 @@ function setup() {
   
 
   //obstacles (temporary)
-  for (let i = 0; i <= 16; i++) {
-    obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
-    // obstacles[i].rotationLock = true;
-    obstacles[i].bounciness = 0;
-    obstacles[i].friction = 0;
-  }
+  // for (let i = 0; i <= 16; i++) {
+  //   obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
+  //   // obstacles[i].rotationLock = true;
+  //   obstacles[i].bounciness = 0;
+  //   obstacles[i].friction = 0;
+  // }
 
   //temp sprites
   ball = new Sprite(200, 200, 100);
   ball.mass = 100;
+  ball.bounciness = 0;
   
 }
 
 function draw() {
-  // clear();
+  clear();
   
+
   background(10);
-  
+
+  push();
   camera.on();
-  updatePlayerMovement();
-  camera.x = player.x;
-  camera.y = player.y;
   camera.off();
+  pop();
+  camera.x = player.x;
+
+  updatePlayerMovement();
   updateGuns();
+
+
 }
 
 function updatePlayerMovement() {
