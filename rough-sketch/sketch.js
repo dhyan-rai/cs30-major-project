@@ -6,6 +6,7 @@
 // - describe what you did to take this project "above and beyond"
 
 let player;
+let bg;
 // let player;
 let obstacle1, obstacle2, obstacle3, obstacle4;
 let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
@@ -13,7 +14,7 @@ let guns;
 let globalBullets = [];
 
 //initializing guns
-let shotgun, mg4, ak47;
+let shotgun, sniper, ak47;
 
 class Player {
   constructor(x, y) {
@@ -23,15 +24,15 @@ class Player {
 }
 
 function preload() {
-  bg = loadImage("assets/battle-royale-map1.png");
+  bg = loadImage("assets/battle-royale-map2.png");
 }
 
 function setup() {
-  // createCanvas(windowWidth, windowHeight)
+  createCanvas(windowWidth, windowHeight)
   // allSprites.autoDraw = false
   angleMode(DEGREES);
 
-  new Canvas();
+  // new Canvas();
   //creating player sprite
   player = new Sprite(width/2, height/2, 105);
   // player.debug = true;
@@ -64,6 +65,28 @@ function setup() {
   shotgun.range = 25;
   shotgun.bulletArray = [];
 
+  //sniper
+  sniper = new guns.Sprite(400, 200);
+  sniper.width = 50;
+  sniper.height = 10;
+  sniper.layer = 2;
+  sniper.offset.x = 25;
+  sniper.gunType = "sniper";
+  sniper.range = 70;
+  sniper.bulletArray = [];
+
+  //ak47
+  ak47 = new guns.Sprite(500, 200);
+  ak47.width = 50;
+  ak47.height = 10;
+  ak47.layer = 2;
+  ak47.offset.x = 25;
+  ak47.gunType = "ak47";
+  ak47.range = 40;
+  ak47.bulletArray = [];
+
+  
+
   //obstacles (temporary)
   for (let i = 0; i <= 16; i++) {
     obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
@@ -73,18 +96,21 @@ function setup() {
   }
 
   //temp sprites
-  balle = new Sprite(200, 200, 100);
+  ball = new Sprite(200, 200, 100);
+  ball.mass = 100;
   
 }
 
 function draw() {
-  clear();
-  background(20);
-
+  // clear();
   
+  background(10);
+  
+  camera.on();
   updatePlayerMovement();
   camera.x = player.x;
   camera.y = player.y;
+  camera.off();
   updateGuns();
 }
 
@@ -179,7 +205,7 @@ function unequipGun(player, gun) {
 
 function shootBullet(gun) {
   if(gun.gunType === "shotgun") {
-    for (let i = 0; i <= 15; i++) {
+    for (let i = 0; i <= 10; i++) {
 
       //position from an angle
       let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width);
@@ -196,9 +222,50 @@ function shootBullet(gun) {
       bullet.layer = 1;
       bullet.bounce = 0.8;
       bullet.life = gun.range + random(-5, 5);
+      bullet.mass = 5;  
       gun.bulletArray.push(bullet);
     }
   }
+  if (gun.gunType === "sniper") {
+
+    //position from an angle
+    let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width);
+    let gunPosTemp = createVector(gun.x, gun.y);
+    let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+
+    let bullet = new Sprite(bulletPos.x, bulletPos.y);
+
+    bullet.diameter = 11.5;
+    bullet.color = "yellow";
+    bullet.direction = gun.rotation;
+    bullet.speed = random(10, 12);
+    bullet.collider = "d";
+    bullet.layer = 1;
+    bullet.life = gun.range;
+    bullet.mass = 20;
+    gun.bulletArray.push(bullet);
+  }
+  
+  if (gun.gunType === "ak47") {
+
+    //position from an angle
+    let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width);
+    let gunPosTemp = createVector(gun.x, gun.y);
+    let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+
+    let bullet = new Sprite(bulletPos.x, bulletPos.y);
+
+    bullet.diameter = 9;
+    bullet.color = "blue";
+    bullet.direction = gun.rotation;
+    bullet.speed = random(9, 10);
+    bullet.collider = "d";
+    bullet.layer = 1;
+    bullet.life = gun.range;
+    bullet.mass = 10;
+    gun.bulletArray.push(bullet);
+  }
+
 }
 
 function updateBullets(gun) {
