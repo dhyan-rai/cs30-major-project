@@ -51,7 +51,7 @@ function setup() {
   player.friction = 0;
   player.drag = 0;
   player.img = "assets/ball-img.png";
-  player.scale = 0.5;
+  player.scale = 0.25;
   player.layer = 5;
 
   //creating gun
@@ -93,11 +93,13 @@ function setup() {
 
   //tilemap
   walls = new Group();
-  walls.w = 30;
-  walls.h = 30;
+  walls.w = 16;
+  walls.h = 16;
   walls.tile = "w";
   walls.collider = "s";
+  walls.bounciness = 0;
   walls.color = "brown";
+
   tileMap = new Tiles(
     [
       "................................................",
