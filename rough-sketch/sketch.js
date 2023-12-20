@@ -12,7 +12,7 @@ let obstacle1, obstacle2, obstacle3, obstacle4;
 let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
 let guns;
 let globalBullets = [];
-let walls;
+let walls, wallImg;
 let tileMap;
 
 //initializing guns
@@ -30,13 +30,15 @@ class Player {
 }
 
 function preload() {
-  bg = loadImage("assets/battle-royale-map2.png");
+  bg = loadImage("assets/battle-royale-map3.png");
+  wallImg = loadImage("assets/wall.png");
 }
 
 function setup() {
   // createCanvas(windowWidth, windowHeight, WEBGL);
   // allSprites.autoDraw = false
   angleMode(DEGREES);
+  imageMode(CENTER);
 
   new Canvas();
   //creating player sprite
@@ -63,8 +65,8 @@ function setup() {
 
   //guns creation
   shotgun = new guns.Sprite();
-  shotgun.width = 50;
-  shotgun.height = 10;
+  shotgun.width = 20;
+  shotgun.height = 5;
   shotgun.layer = 2;
   shotgun.offset.x = 25;
   shotgun.gunType = "shotgun";
@@ -98,36 +100,38 @@ function setup() {
   walls.tile = "w";
   walls.collider = "s";
   walls.bounciness = 0;
-  walls.color = "brown";
+  // walls.img = wallImg;
+  // walls.visible = false;
+  // walls.debug = true;
 
   tileMap = new Tiles(
     [
       "................................................",
       "................................................",
       "...........wwwwwwwwwwwwwwwwwwwwwwwwwwwww........",
-      "...........w........w..................w........",
-      "...........w...........................w........",
-      ".......................................w........",
-      "................................................",
-      "...................ww...........................",
-      ".......wwwwwwwww................................",
-      ".......w.......w................................",
-      ".......w.......w................................",
-      ".......w.......w................................",
-      ".......w.......w................................",
-      ".......w.......w................................",
-      ".......wwwwwwwww................................",
-      ".......w.......w................................",
-      ".......w.......w.......wwwwwwwwwww..............",
-      ".......wwwwwwwww.................ww.............",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "..........w.....................................",
+      "...........wwwwwwwww............................",
       "................................................",
       "................................................",
       "................................................",
       "................................................",
-      ".....................w.....w....................",
-      ".....................w.....w....................",
-      ".....................wwwwwwww...................",
-      "...........................ww...................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
       "................................................",
       "................................................",
       "................................................",
@@ -149,10 +153,11 @@ function setup() {
   // }
 
   //temp sprites
-  ball = new Sprite(200, 200, 100);
-  ball.mass = 100;
-  ball.bounciness = 0;
+  // ball = new Sprite(200, 200, 100);
+  // ball.mass = 100;
+  // ball.bounciness = 0;
   
+  camera.zoom = 1.9;
 }
 
 function draw() {
@@ -161,14 +166,17 @@ function draw() {
 
   background(10);
   noStroke();
-
+  camera.on();
+  updatePlayerMovement();
+  image(bg, width/2, height/2);
+  // camera.moveTo(player.x, player.y, player.speed *= 0.8);
   camera.x = player.x;
   camera.y = player.y;
+  camera.off();
 
-  updatePlayerMovement();
   updateGuns();
 
-
+  console.log(player.speed);
 }
 
 function updatePlayerMovement() {
@@ -187,16 +195,16 @@ function updatePlayerMovement() {
       player.moveTowards(player.position.x - 1, player.position.y, spd);
     }
     if (keyIsDown(87) && keyIsDown(68)) {
-      player.moveTowards(player.position.x + 1, player.position.y - 1, spd);
+      player.moveTowards(player.position.x + 0.7, player.position.y - 0.7, spd);
     }
     if (keyIsDown(87) && keyIsDown(65)) {
-      player.moveTowards(player.position.x - 1, player.position.y - 1, spd);
+      player.moveTowards(player.position.x - 0.7, player.position.y - 0.7, spd);
     }
     if (keyIsDown(83) && keyIsDown(68)) {
-      player.moveTowards(player.position.x + 1, player.position.y + 1, spd);
+      player.moveTowards(player.position.x + 0.7, player.position.y + 0.7, spd);
     }
     if (keyIsDown(83) && keyIsDown(65)) {
-      player.moveTowards(player.position.x - 1, player.position.y + 1, spd);
+      player.moveTowards(player.position.x - 0.7, player.position.y + 0.7, spd);
     }
   }
   else {
@@ -271,7 +279,7 @@ function shootBullet(gun) {
 
       let bullet = new Sprite(bulletPos.x, bulletPos.y);
 
-      bullet.diameter = 10;
+      bullet.diameter = 5;
       bullet.color = "white";
       bullet.direction = gun.rotation + random(-10,10);
       bullet.speed = random(8, 10);
