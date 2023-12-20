@@ -117,5 +117,50 @@ function updateGuestSprites() {
   }
 }
 
+let wallImg, wallHitbox;
+let squab, squabs;
+
+function preload() {
+  wallImg = loadImage("wall.png");
+}
+
+function setup() {
+  new Canvas();
+  
+  wallHitbox = new Group();
+  wallHitbox.debug = true;
+  // wallHitbox.w = 16;
+  // wallHitbox.h = 16;
+  wallHitbox.img = wallImg;
+  wallHitbox.tile = "w";
+  wallHitbox.collider = "s";
+  wallHitbox.h = 17;
+  wallHitbox.w = 16;
+  
+
+  walls = new Tiles(
+  
+    [
+      "ww..www"
+    ],
+    100,
+    100,
+    wallHitbox.w,
+    wallHitbox.h
+  )
+}
+  // squab = new Sprite(100, 150);
+//   sqaubs = new Group();
+//   // squabs.value = "lol";
+//   squabs.color = "black";
+//   squab.changeColor = function() {
+//     this.color = "black";
+//   }
+// }
+
+function draw() {
+  background(220);
+}
+
 
 
