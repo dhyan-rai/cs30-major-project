@@ -38,12 +38,12 @@ function setup() {
   // createCanvas(windowWidth, windowHeight, WEBGL);
   // allSprites.autoDraw = false
   angleMode(DEGREES);
-  imageMode(CENTER);
+  // imageMode(CENTER);
 
   new Canvas();
   //creating player sprite
   player = new Sprite(width/2, height/2, 105);
-  // player.debug = true;
+  player.debug = true;
   player.color = "black";
   player.mass = 1;
   player.collider = "d";
@@ -61,37 +61,46 @@ function setup() {
   guns.mass = 0;
   guns.collider = "n";
   guns.equipped = false;
-  // guns.bulletArray = [];
+
 
   //guns creation
   shotgun = new guns.Sprite();
   shotgun.width = 20;
   shotgun.height = 5;
   shotgun.layer = 2;
-  shotgun.offset.x = 25;
+  // shotgun.offset.x = 25;
   shotgun.gunType = "shotgun";
   shotgun.range = 25;
-  shotgun.bulletArray = [];
+  // shotgun.bulletArray = [];
 
   //sniper
   sniper = new guns.Sprite(400, 200);
   sniper.width = 50;
   sniper.height = 10;
   sniper.layer = 2;
-  sniper.offset.x = 25;
+  // sniper.offset.x = 25;
   sniper.gunType = "sniper";
   sniper.range = 70;
-  sniper.bulletArray = [];
+  // sniper.bulletArray = [];
 
   //ak47
   ak47 = new guns.Sprite(500, 200);
   ak47.width = 50;
   ak47.height = 10;
   ak47.layer = 2;
-  ak47.offset.x = 25;
+  // ak47.offset.x = 25;
   ak47.gunType = "ak47";
   ak47.range = 40;
-  ak47.bulletArray = [];
+  // ak47.bulletArray = [];
+
+  for (let gun of guns) {
+    gun.bulletArray = [];
+    gun.offset.x = 25;
+    gun.bounciness = 0;
+    gun.friction = 0;
+    gun.drag = 0;
+    gun.rotationDrag = 0;
+  }
 
   //tilemap
   walls = new Group();
@@ -100,7 +109,7 @@ function setup() {
   walls.tile = "w";
   walls.collider = "s";
   walls.bounciness = 0;
-  // walls.img = wallImg;
+  walls.img = wallImg;
   // walls.visible = false;
   // walls.debug = true;
 
@@ -109,17 +118,17 @@ function setup() {
       "................................................",
       "................................................",
       "...........wwwwwwwwwwwwwwwwwwwwwwwwwwwww........",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
-      "..........w.....................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
       "...........wwwwwwwww............................",
       "................................................",
       "................................................",
@@ -168,15 +177,14 @@ function draw() {
   noStroke();
   camera.on();
   updatePlayerMovement();
-  image(bg, width/2, height/2);
-  // camera.moveTo(player.x, player.y, player.speed *= 0.8);
+  image(bg, 0, 0);
   camera.x = player.x;
   camera.y = player.y;
   camera.off();
 
   updateGuns();
 
-  console.log(player.speed);
+  // console.log(player.speed);
 }
 
 function updatePlayerMovement() {
@@ -273,9 +281,10 @@ function shootBullet(gun) {
     for (let i = 0; i <= 10; i++) {
 
       //position from an angle
-      let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width);
+      let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width + 10);
       let gunPosTemp = createVector(gun.x, gun.y);
       let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+      // bulletPos.setMag(1);
 
       let bullet = new Sprite(bulletPos.x, bulletPos.y);
 
