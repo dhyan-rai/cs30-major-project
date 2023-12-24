@@ -1,3 +1,43 @@
+let theShape, shapeTileset, shapeGroup, ball, sideLength;
+
+function setup() {
+  createCanvas(400, 400);
+
+
+  //making group of shapes
+  shapeGroup = new Group();
+  shapeGroup.collider = "s";
+  shapeGroup.tile = "=";
+  // shapeGroup.w = 40;
+  // shapeGroup.h = 30;
+  sideLength = 50
+  shapeGroup.collider = "s";
+  shapeGroup.verts = [[sideLength, 0], [0, sideLength], [-sideLength/2, 0], [0, -sideLength/2], [-sideLength/2, 0], [0, -sideLength/2]];
+  shapeTileset = new Tiles(
+    [
+      "=..=...",
+      "..=..=."
+    ],
+    0 + sideLength/2, 0 + sideLength/2 , sideLength, sideLength
+  )
+
+  ball = new Sprite(width/2, height/2, 25)
+}
+
+function draw() {
+  background(220);
+  ball.moveTowards(mouseX, mouseY, 0.3);
+  circle(sideLength/2, sideLength/2, 10);
+}
+    
+    
+
+
+
+
+
+
+    
 // //testing
 
 // let guests, me;
@@ -116,51 +156,3 @@
 //     }
 //   }
 // }
-
-let wallImg, wallHitbox;
-let squab, squabs;
-
-function preload() {
-  wallImg = loadImage("wall.png");
-}
-
-function setup() {
-  new Canvas();
-  
-  wallHitbox = new Group();
-  wallHitbox.debug = true;
-  // wallHitbox.w = 16;
-  // wallHitbox.h = 16;
-  wallHitbox.img = wallImg;
-  wallHitbox.tile = "w";
-  wallHitbox.collider = "s";
-  wallHitbox.h = 17;
-  wallHitbox.w = 16;
-  
-
-  walls = new Tiles(
-  
-    [
-      "ww..www"
-    ],
-    100,
-    100,
-    wallHitbox.w,
-    wallHitbox.h
-  )
-}
-  // squab = new Sprite(100, 150);
-//   sqaubs = new Group();
-//   // squabs.value = "lol";
-//   squabs.color = "black";
-//   squab.changeColor = function() {
-//     this.color = "black";
-//   }
-// }
-
-function draw() {
-  background(220);
-}
-
-
-
