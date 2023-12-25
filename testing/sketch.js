@@ -1,34 +1,70 @@
-let theShape, shapeTileset, shapeGroup, ball, sideLength;
+let bg, bgTileMap;
+
+function preload() {
+  bg = loadImage("TileMap_test1.png");
+  bgTileMap = loadTiledMap("tile-map-1");
+}
 
 function setup() {
   createCanvas(400, 400);
-
-
-  //making group of shapes
-  shapeGroup = new Group();
-  shapeGroup.collider = "s";
-  shapeGroup.tile = "=";
-  // shapeGroup.w = 40;
-  // shapeGroup.h = 30;
-  sideLength = 50
-  shapeGroup.collider = "s";
-  shapeGroup.verts = [[sideLength, 0], [0, sideLength], [-sideLength/2, 0], [0, -sideLength/2], [-sideLength/2, 0], [0, -sideLength/2]];
-  shapeTileset = new Tiles(
-    [
-      "=..=...",
-      "..=..=."
-    ],
-    0 + sideLength/2, 0 + sideLength/2 , sideLength, sideLength
-  )
-
-  ball = new Sprite(width/2, height/2, 25)
+  imageMode(CENTER);
 }
 
 function draw() {
   background(220);
-  ball.moveTowards(mouseX, mouseY, 0.3);
-  circle(sideLength/2, sideLength/2, 10);
+  bgTileMap.draw(0, 0);
+  // camera.on();
+  // image(bg, -200, 0);
+  // camera.x = mouseX;
+  // camera.y = mouseY;
+  // camera.off();
 }
+
+function keyTyped() {
+  if(key === 'w') {
+    camera.zoom += 0.2;
+  }  
+}
+
+
+
+
+
+
+
+
+
+// let theShape, shapeTileset, shapeGroup, ball, sideLength;
+
+// function setup() {
+//   createCanvas(400, 400);
+
+
+//   //making group of shapes
+//   shapeGroup = new Group();
+//   shapeGroup.collider = "s";
+//   shapeGroup.tile = "=";
+//   // shapeGroup.w = 40;
+//   // shapeGroup.h = 30;
+//   sideLength = 50
+//   shapeGroup.collider = "s";
+//   shapeGroup.verts = [[sideLength, 0], [0, sideLength], [-sideLength/2, 0], [0, -sideLength/2], [-sideLength/2, 0], [0, -sideLength/2]];
+//   shapeTileset = new Tiles(
+//     [
+//       "=..=...",
+//       "..=..=."
+//     ],
+//     0 + sideLength/2, 0 + sideLength/2 , sideLength, sideLength
+//   )
+
+//   ball = new Sprite(width/2, height/2, 25)
+// }
+
+// function draw() {
+//   background(220);
+//   ball.moveTowards(mouseX, mouseY, 0.3);
+//   circle(sideLength/2, sideLength/2, 10);
+// }
     
     
 

@@ -6,7 +6,7 @@
 // - describe what you did to take this project "above and beyond"
 
 let player;
-let bg;
+let bgGround, bgResources;
 // let player;
 let obstacle1, obstacle2, obstacle3, obstacle4;
 let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
@@ -14,6 +14,7 @@ let guns;
 let globalBullets = [];
 let walls, wallImg;
 let tileMap;
+let camOffsetX, camOffsetY;
 
 //initializing guns
 let shotgun, sniper, ak47;
@@ -30,7 +31,8 @@ class Player {
 }
 
 function preload() {
-  bg = loadImage("assets/battle-royale-map3.png");
+  bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
+  bgResources = loadImage("assets/test-maps/tile-map-resources-1.png")
   wallImg = loadImage("assets/wall.png");
 }
 
@@ -38,12 +40,19 @@ function setup() {
   // createCanvas(windowWidth, windowHeight, WEBGL);
   // allSprites.autoDraw = false
   angleMode(DEGREES);
-  // imageMode(CENTER);
+  imageMode(CENTER);
+  bgGround.width *= 0.5;
+  bgGround.height *= 0.5;
+
+  bgResources.width *= 0.5;
+  bgResources.height *= 0.5;
+
 
   new Canvas();
   //creating player sprite
   player = new Sprite(width/2, height/2, 105);
-  player.debug = true;
+  player.autoDraw = false;
+  // player.debug = true;
   player.color = "black";
   player.mass = 1;
   player.collider = "d";
@@ -52,9 +61,10 @@ function setup() {
   player.rotationLock = true;
   player.friction = 0;
   player.drag = 0;
-  player.img = "assets/ball-img.png";
+  // player.img = "assets/ball-img.png";
   player.scale = 0.25;
-  player.layer = 5;
+  player.layer = 0;
+  player.accel = 3;
 
   //creating gun
   guns = new Group();
@@ -108,17 +118,13 @@ function setup() {
   walls.h = 16;
   walls.tile = "w";
   walls.collider = "s";
-  walls.bounciness = 0;
-  walls.img = wallImg;
+  // walls.img = wallImg;
   // walls.visible = false;
   // walls.debug = true;
-
+  
   tileMap = new Tiles(
     [
-      "................................................",
-      "................................................",
-      "...........wwwwwwwwwwwwwwwwwwwwwwwwwwwww........",
-      "................................................",
+      ".......................www......................",
       "................................................",
       "................................................",
       "................................................",
@@ -129,7 +135,32 @@ function setup() {
       "................................................",
       "................................................",
       "................................................",
-      "...........wwwwwwwww............................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
+      "................................................",
       "................................................",
       "................................................",
       "................................................",
@@ -151,9 +182,12 @@ function setup() {
     0,
     walls.w,
     walls.h
-  );
-
-  //obstacles (temporary)
+    );
+    
+    for(let wall of walls) {
+      wall.bounciness = 0;
+    }
+    //obstacles (temporary)
   // for (let i = 0; i <= 16; i++) {
   //   obstacles[i] = new Sprite(i * 150, 400, 50, 50, "s");
   //   // obstacles[i].rotationLock = true;
@@ -162,11 +196,11 @@ function setup() {
   // }
 
   //temp sprites
-  // ball = new Sprite(200, 200, 100);
-  // ball.mass = 100;
-  // ball.bounciness = 0;
+  ball = new Sprite(200, 816, 100);
+  ball.mass = 100;
+  ball.bounciness = 0;
   
-  camera.zoom = 1.9;
+  camera.zoom = 1.5;
 }
 
 function draw() {
@@ -177,9 +211,13 @@ function draw() {
   noStroke();
   camera.on();
   updatePlayerMovement();
-  image(bg, 0, 0);
   camera.x = player.x;
   camera.y = player.y;
+  image(bgGround, 0 - player.vel.x, 0 - player.vel.y);
+  player.draw()
+  image(bgResources, 0 - player.vel.x, 0 - player.vel.y);
+  camera.x += player.vel.x;
+  camera.y += player.vel.y;
   camera.off();
 
   updateGuns();
@@ -192,32 +230,46 @@ function updatePlayerMovement() {
     let spd = 3.7;
     if (keyIsDown(87)) {
       player.moveTowards(player.position.x, player.position.y - 1, spd);
+      // player.vel.y = 0;
+      // player.vel.y -= player.accel;
     }
     if (keyIsDown(83)) {
       player.moveTowards(player.position.x, player.position.y + 1, spd);
+      // player.vel.y = 0;
+      // player.vel.y += player.accel;
     }
     if (keyIsDown(68)) {
       player.moveTowards(player.position.x + 1, player.position.y, spd);
+      // player.vel.x = 0;
+      // player.vel.x += 1;
     }
     if (keyIsDown(65)) {
       player.moveTowards(player.position.x - 1, player.position.y, spd);
+      // player.vel.x = 0;
+      // player.vel.x -= player.accel;
     }
     if (keyIsDown(87) && keyIsDown(68)) {
-      player.moveTowards(player.position.x + 0.7, player.position.y - 0.7, spd);
+      player.moveTowards(player.position.x + 1, player.position.y - 1, spd);
+      // player.vel.y += player.accel;
     }
     if (keyIsDown(87) && keyIsDown(65)) {
-      player.moveTowards(player.position.x - 0.7, player.position.y - 0.7, spd);
+      player.moveTowards(player.position.x - 1, player.position.y - 1, spd);
     }
     if (keyIsDown(83) && keyIsDown(68)) {
-      player.moveTowards(player.position.x + 0.7, player.position.y + 0.7, spd);
+      player.moveTowards(player.position.x + 1, player.position.y + 1, spd);
     }
     if (keyIsDown(83) && keyIsDown(65)) {
-      player.moveTowards(player.position.x - 0.7, player.position.y + 0.7, spd);
+      player.moveTowards(player.position.x - 1, player.position.y + 1, spd);
     }
   }
   else {
     player.vel.x = 0;
     player.vel.y = 0;
+    if(player.accel > 0) {
+      player.accel -= 0.1;
+    }
+    camOffsetY = 0;
+    camOffsetX = 0;
   }
 
   player.rotateTowards(mouse, 1.2, 1);
@@ -273,7 +325,6 @@ function unequipGun(player, gun) {
   gun.equipped = false;
   gun.velocity.x = 0;
   gun.velocity.y = 0;
-  console.log("unequipped");
 }
 
 function shootBullet(gun) {
@@ -351,3 +402,11 @@ function updateBullets(gun) {
   }
 }
 
+function keyTyped() {
+  if(key === "o") {
+    camera.zoom += 0.2;
+  }
+  if(key === "p") {
+    camera.zoom -= 0.2;
+  }
+}

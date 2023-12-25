@@ -1,6 +1,6 @@
 /**
  * p5play
- * @version 3.17
+ * @version 3.18
  * @author quinton-ashley
  * @license gpl-v3-only
  */
@@ -32,7 +32,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 			};
 			gtag('js', new Date());
 			gtag('config', 'G-EHXNCTSYLK');
-			gtag('event', 'p5play_v3_14');
+			gtag('event', 'p5play_v3_18');
 		};
 	}
 
@@ -662,17 +662,14 @@ p5.prototype.registerMethod('init', function p5playInit() {
 			this._destIdx = 0;
 			this.drag = 0;
 
+			this._debug = false;
+
 			/**
-			 * When the sprite.debug property is set to true, the collider
-			 * shapes will be drawn as bright green outlines with crosshairs
-			 * at the center of the sprite.
-			 *
-			 * When the sprite.debug property is set to 'colliders', only the
-			 * collider shapes will be drawn.
-			 * @type {boolean|string}
-			 * @default false
+			 * Text displayed at the center of the sprite.
+			 * @type {String}
+			 * @default undefined
 			 */
-			this.debug = false;
+			this.text;
 
 			if (!group._isAllSpritesGroup) this.p.allSprites.push(this);
 			group.push(this);
@@ -1292,7 +1289,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 		}
 
 		/**
-		 * The center of mass of the sprite's physics body.
+		 * The center of mass of the sprite's physics body. Read only.
 		 * @type {p5.Vector}
 		 */
 		get centerOfMass() {
@@ -2937,7 +2934,15 @@ p5.prototype.registerMethod('init', function p5playInit() {
 		}
 
 		/**
-		 * Move the sprite a certain distance from its current position.
+		 * Move the sprite a distance from its current position.
+		 *
+		 * You can specify the `direction` and `speed` of movement as
+		 * parameters or set these properties before using this function.
+		 *
+		 * When `tileSize` is not 1, distance is divisible by 0.5,
+		 * and a direction name or cardinal direction angle is given,
+		 * the distance the sprite moves will be rounded up to the
+		 * nearest half tile.
 		 *
 		 * @param {Number} distance [optional]
 		 * @param {Number|String} direction [optional]
@@ -2969,21 +2974,16 @@ p5.prototype.registerMethod('init', function p5playInit() {
 			}
 			direction ??= this.direction;
 
-			let x = null;
-			let y = null;
-			if (direction != 90 && direction != 270) {
-				x = this.x + this.p.cos(direction) * distance;
-			}
-			if (direction != 0 && direction != 180) {
-				y = this.y + this.p.sin(direction) * distance;
-			}
-			if (directionNamed && this.tileSize != 1) {
-				// round to nearest 0.5
-				if (x) x = Math.round(x * 2) / 2;
-				if (y) y = Math.round(y * 2) / 2;
+			let x = this.p.cos(direction) * distance;
+			let y = this.p.sin(direction) * distance;
+
+			if (this.tileSize != 1 && (directionNamed || direction % 90 == 0) && distance % 0.5 == 0) {
+				// snap movement to nearest half tile
+				x = Math.round((this.x + Math.round(x)) * 2) / 2;
+				y = Math.round((this.y + Math.round(y)) * 2) / 2;
 			} else if (direction % 45 == 0) {
-				if (x) x = fixRound(x);
-				if (y) y = fixRound(y);
+				x = fixRound(this.x + x);
+				y = fixRound(this.y + y);
 			}
 			return this.moveTo(x, y, speed);
 		}
@@ -3008,20 +3008,20 @@ p5.prototype.registerMethod('init', function p5playInit() {
 				y = obj.y;
 				x = obj.x;
 			}
-			this._dest.x = this.x;
-			this._dest.y = this.y;
-
-			if (x == this.x) x = false;
-			else if (x || x === 0) {
+			if (x != null && x != this.x) {
 				this._dest.x = x;
 				x = true;
+			} else {
+				this._dest.x = this.x;
+				x = false;
 			}
-			if (y == this.y) y = false;
-			else if (y || y === 0) {
+			if (y != null && y != this.y) {
 				this._dest.y = y;
 				y = true;
+			} else {
+				this._dest.y = this.y;
+				y = false;
 			}
-
 			this._destIdx++;
 			if (!x && !y) return Promise.resolve(true);
 
@@ -3039,8 +3039,8 @@ p5.prototype.registerMethod('init', function p5playInit() {
 
 			let percent = speed / c;
 
-			if (x) this.vel.x = b * percent;
-			if (y) this.vel.y = a * percent;
+			this.vel.x = b * percent;
+			this.vel.y = a * percent;
 
 			// direction destination
 			let destD = this.direction;
@@ -3049,10 +3049,10 @@ p5.prototype.registerMethod('init', function p5playInit() {
 			let destDMax = destD + 0.1;
 
 			let velThresh = this.p.world.velocityThreshold;
+			velThresh = Math.min(velThresh, speed * 0.1);
 
 			// proximity margin of error
-			let margin = speed + velThresh;
-			velThresh = Math.max(velThresh, margin * 0.25);
+			let margin = speed * 0.51;
 
 			// if x or y is null, we only care that the sprite
 			// reaches the destination along one axis
@@ -3060,11 +3060,10 @@ p5.prototype.registerMethod('init', function p5playInit() {
 
 			let destIdx = this._destIdx;
 			return (async () => {
-				let distX = margin + margin;
-				let distY = margin + margin;
+				let distX, distY;
 				do {
+					await pInst.sleep();
 					if (destIdx != this._destIdx) return false;
-					await pInst.delay();
 
 					// check if the sprite's movement has been impeded such that
 					// its speed has become slower than the world velocityThreshold
@@ -3078,12 +3077,18 @@ p5.prototype.registerMethod('init', function p5playInit() {
 					}
 
 					// check if the sprite has reached its destination
-					distX = Math.abs(this.x - this._dest.x);
-					distY = Math.abs(this.y - this._dest.y);
+					if (x) {
+						if (this.vel.x > 0) distX = this._dest.x - this.x;
+						else distX = this.x - this._dest.x;
+					}
+					if (y) {
+						if (this.vel.y > 0) distY = this._dest.y - this.y;
+						else distY = this.y - this._dest.y;
+					}
 				} while ((x && distX > margin) || (y && distY > margin));
 				// stop moving the sprite, snap to destination
-				if (distX < margin) this.x = this._dest.x;
-				if (distY < margin) this.y = this._dest.y;
+				this.x = this._dest.x;
+				this.y = this._dest.y;
 				this.vel.x = 0;
 				this.vel.y = 0;
 				return true;
@@ -3248,8 +3253,8 @@ p5.prototype.registerMethod('init', function p5playInit() {
 				if (frames > 1) {
 					let limit = Math.abs(this.rotationSpeed) + 0.01;
 					do {
+						await pInst.sleep();
 						if (this._rotateIdx != _rotateIdx) return false;
-						await pInst.delay();
 
 						if ((cw && this.rotationSpeed < 0.01) || (!cw && this.rotationSpeed > -0.01)) {
 							return false;
@@ -3261,10 +3266,10 @@ p5.prototype.registerMethod('init', function p5playInit() {
 
 					if (Math.abs(ang - this.rotation) > 0.01) {
 						this.rotationSpeed = ang - this.rotation;
-						await pInst.delay();
+						await pInst.sleep();
 					}
 				} else {
-					await pInst.delay();
+					await pInst.sleep();
 				}
 				if (this._rotateIdx != _rotateIdx) return false;
 				this.rotationSpeed = 0;
@@ -4048,33 +4053,17 @@ p5.prototype.registerMethod('init', function p5playInit() {
 						_generateSheetFrames();
 						pInst._decrementPreload();
 					});
+					if (typeof sheet == 'string') {
+						owner.spriteSheet = this.spriteSheet;
+					}
 				}
 
 				function _generateSheetFrames() {
-					if (Array.isArray(atlas) || Array.isArray(atlas.frames)) {
-						if (typeof atlas[0] == 'number') {
-							if (atlas.length == 4) {
-								atlas = { pos: atlas.slice(0, 2), size: atlas.slice(2) };
-							} else {
-								atlas = { pos: atlas };
-							}
+					if (Array.isArray(atlas)) {
+						if (atlas.length == 4) {
+							atlas = { pos: atlas.slice(0, 2), size: atlas.slice(2) };
 						} else {
-							let frames = atlas;
-							if (Array.isArray(atlas.frames)) {
-								frames = atlas.frames;
-								delete atlas.frames;
-								for (let i = 0; i < frames.length; i++) {
-									frames[i] = {
-										pos: frames[i]
-									};
-									Object.assign(frames[i], atlas);
-								}
-							}
-							for (let frame of frames) {
-								atlas = frame;
-								_generateSheetFrames();
-							}
-							return;
+							atlas = { pos: atlas };
 						}
 					}
 
@@ -4101,7 +4090,9 @@ p5.prototype.registerMethod('init', function p5playInit() {
 					if (delay) _this.frameDelay = delay;
 					if (frameDelay) _this.frameDelay = frameDelay;
 					if (rotation) _this.rotation = rotation;
-					frameCount ??= frames || 1;
+					if (frames && Array.isArray(frames)) {
+						frameCount = frames.length;
+					} else frameCount ??= frames || 1;
 					w ??= width || owner.anis.w;
 					h ??= height || owner.anis.h;
 					x ??= col || 0;
@@ -4126,7 +4117,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 						if (!owner._dimensionsUndef && owner.w && owner.h) {
 							w = owner.w * tileSize;
 							h = owner.h * tileSize;
-						} else if (tileSize) {
+						} else if (tileSize != 1) {
 							w = h = tileSize;
 						} else if (frameCount) {
 							w = _this.spriteSheet.width / frameCount;
@@ -4143,24 +4134,44 @@ p5.prototype.registerMethod('init', function p5playInit() {
 						h *= tileSize;
 					}
 
-					// get the real dimensions and position of the frame
-					// in the sheet
-					if (tileSize != 1) {
-						x *= tileSize;
-						y *= tileSize;
-					} else if (line !== undefined || row !== undefined || col !== undefined) {
-						x *= w;
-						y *= h;
-					}
-
 					// add all the frames in the animation to the frames array
-					for (let i = 0; i < frameCount; i++) {
-						_this.push({ x, y, w, h });
-						x += w;
-						if (x >= _this.spriteSheet.width) {
-							x = 0;
-							y += h;
-							if (y >= _this.spriteSheet.height) y = 0;
+					if (!Array.isArray(frames)) {
+						if (tileSize != 1 || pos || line !== undefined || row !== undefined || col !== undefined) {
+							x *= w;
+							y *= h;
+						}
+						for (let i = 0; i < frameCount; i++) {
+							_this.push({ x, y, w, h });
+							x += w;
+							if (x >= _this.spriteSheet.width) {
+								x = 0;
+								y += h;
+								if (y >= _this.spriteSheet.height) y = 0;
+							}
+						}
+					} else {
+						let sw = Math.round(_this.spriteSheet.width / w);
+						for (let frame of frames) {
+							if (typeof frame == 'number') {
+								y = Math.floor(frame / sw) * h;
+								x = (frame % sw) * w;
+								_this.push({ x, y, w, h });
+							} else {
+								let f;
+								if (frame.length == 2) {
+									x = frame[0] * w;
+									y = frame[1] * h;
+									f = { x, y, w, h };
+								} else {
+									f = {
+										x: frame[0],
+										y: frame[1],
+										w: frame[2],
+										h: frame[3]
+									};
+								}
+								_this.push(f);
+							}
 						}
 					}
 				}
@@ -5173,11 +5184,15 @@ p5.prototype.registerMethod('init', function p5playInit() {
 		set image(val) {
 			this.ani = val;
 		}
+
 		/**
 		 * Depending on the value that the amount property is set to, the group will
 		 * either add or remove sprites.
 		 * @type {Number}
 		 */
+		get amount() {
+			return this.length;
+		}
 		set amount(val) {
 			let diff = val - this.length;
 			let shouldAdd = diff > 0;
@@ -6231,6 +6246,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 			for (let s of sprites) s.___step();
 			for (let g of groups) g.___step();
 
+			this.p.canvas.dispatchEvent(new Event('p5play_world_step'));
 			if (this.autoStep) this.autoStep = null;
 		}
 
@@ -6617,7 +6633,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 				for (let i = 0; i < steps; i++) {
 					this.x += velX;
 					this.y += velY;
-					await this.p.delay();
+					await this.p.sleep();
 					if (destIdx != this._destIdx) return false;
 				}
 				this.x = x;
@@ -6673,7 +6689,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 				for (let i = 0; i < frames; i++) {
 					if (zoomIdx != this._zoomIdx) return false;
 					this.zoom += speed;
-					await this.p.delay();
+					await this.p.sleep();
 				}
 				this.zoom = target;
 				return true;
@@ -6797,7 +6813,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 						}
 					}
 					if (wasFound) {
-						sprites.push(new g.Sprite(x + col * w, y + row * h));
+						sprites.push(new g.Sprite(x + col * w, y + row * h, g.verts));
 						continue;
 					}
 					let s;
@@ -7826,9 +7842,10 @@ p5.prototype.registerMethod('init', function p5playInit() {
 	};
 
 	/**
-	 * Delay code execution in an async function for the specified time
-	 * or if no input parameter is given, it waits for the next possible
-	 * animation frame.
+	 * Delays code execution in an async function for the specified time.
+	 *
+	 * If no input is given, it waits until a new animation frame is ready
+	 * to be drawn using the `window.requestAnimationFrame` function.
 	 *
 	 * @param {Number} millisecond
 	 * @returns {Promise} A Promise that fulfills after the specified time.
@@ -7838,23 +7855,35 @@ p5.prototype.registerMethod('init', function p5playInit() {
 	 *   await delay(3000);
 	 * }
 	 */
-	this.delay = (millisecond) => {
-		if (!millisecond) {
-			return new Promise(requestAnimationFrame);
-		} else {
-			// else it wraps setTimeout in a Promise
-			return new Promise((resolve) => {
-				setTimeout(resolve, millisecond);
-			});
-		}
+	this.delay = (milliseconds) => {
+		if (!milliseconds) return new Promise(requestAnimationFrame);
+		// else it wraps setTimeout in a Promise
+		return new Promise((resolve) => {
+			setTimeout(resolve, milliseconds);
+		});
 	};
 
 	/**
-	 * Alternative to `delay`, which is preferred, but this name may be more
-	 * familiar to Processing Java users.
+	 * Delays code execution in an async function for the specified time.
+	 *
+	 * If no input is given, it waits until after a
+	 * world step is completed.
+	 *
+	 * @param {Number} millisecond
+	 * @returns {Promise} A Promise that fulfills after the specified time.
+	 *
+	 * @example
+	 * async function startGame() {
+	 *   await sleep(3000);
+	 * }
 	 */
-	this.sleep = (millisecond) => {
-		return this.delay(millisecond);
+	this.sleep = (milliseconds) => {
+		if (!milliseconds) {
+			return new Promise((resolve) => {
+				this.canvas.addEventListener('p5play_world_step', resolve);
+			});
+		}
+		return this.delay(milliseconds);
 	};
 
 	/**
@@ -7962,74 +7991,52 @@ p5.prototype.registerMethod('init', function p5playInit() {
 	 * browser from scrolling the page when the user is playing a game
 	 * using common keyboard commands.
 	 *
-	 * @param {Number} width|ratio
+	 * @param {Number} width
 	 * @param {Number} height
+	 * @param {String} preset - can be 'fullscreen' or 'pixelated'
 	 */
 	this.createCanvas = function () {
 		let args = [...arguments];
-		let isFullScreen = false;
-		let pixelated = false;
-		let w, h, ratio;
+		let isFullScreen, isPixelated, scale;
 		if (typeof args[0] == 'string') {
-			if (args[0].includes(':')) ratio = args[0].split(':');
-			else {
-				args[2] = args[0];
-				args[0] = undefined;
+			let ratio = args[0].split(':');
+			if (ratio[1]) {
+				args[2] = args[1];
+				isFullScreen = true;
+				let rW = Number(ratio[0]);
+				let rH = Number(ratio[1]);
+				let w = window.innerWidth;
+				let h = window.innerWidth * (rH / rW);
+				if (h > window.innerHeight) {
+					w = window.innerHeight * (rW / rH);
+					h = window.innerHeight;
+				}
+				args[0] = Math.round(w);
+				args[1] = Math.round(h);
+			} else {
+				args = [];
 			}
-			if (args[1] == 'fullscreen') isFullScreen = true;
 		}
 		if (!args[0]) {
 			args[0] = window.innerWidth;
 			args[1] = window.innerHeight;
 			isFullScreen = true;
-		} else if (typeof args[0] == 'number' && typeof args[1] != 'number') {
-			args[2] = args[1];
-			args[1] = args[0];
 		}
-		let scale;
 		if (typeof args[2] == 'string') {
-			let rend = args[2].toLowerCase();
-			if (rend != 'p2d' && rend != 'webgl') {
-				rend = rend.split(' ');
-				args.pop();
-			}
+			let rend = args.pop().toLowerCase().split(' ');
 			if (rend[0] == 'pixelated') {
-				pixelated = true;
+				isPixelated = true;
 				if (!rend[1]) isFullScreen = true;
 				else scale = Number(rend[1].slice(1));
-				ratio = [args[0], args[1]];
 			}
-			if (rend[0] == 'fullscreen') {
-				isFullScreen = true;
-			}
+			if (rend[0] == 'fullscreen') isFullScreen = true;
 		}
-		if (ratio) {
-			let rW = Number(ratio[0]);
-			let rH = Number(ratio[1]);
-			if (!scale) {
-				w = window.innerWidth;
-				h = window.innerWidth * (rH / rW);
-				if (h > window.innerHeight) {
-					w = window.innerHeight * (rW / rH);
-					h = window.innerHeight;
-				}
-			} else {
-				w = rW * scale;
-				h = rH * scale;
-			}
-			w = Math.round(w);
-			h = Math.round(h);
-
-			if (!pixelated) {
-				args[0] = w;
-				args[1] = h;
-			}
-		}
-		let can = _createCanvas.call(pInst, ...args);
-		this.canvas.tabIndex = 0;
-		this.canvas.w = args[0];
-		this.canvas.h = args[1];
-		this.canvas.addEventListener('keydown', function (e) {
+		let rend = _createCanvas.call(pInst, ...args);
+		let c = rend.canvas || rend;
+		c.tabIndex = 0;
+		c.w = args[0];
+		c.h = args[1];
+		c.addEventListener('keydown', function (e) {
 			if (
 				e.key == ' ' ||
 				e.key == '/' ||
@@ -8041,21 +8048,21 @@ p5.prototype.registerMethod('init', function p5playInit() {
 				e.preventDefault();
 			}
 		});
-		this.canvas.addEventListener('mouseover', () => {
+		c.addEventListener('mouseover', () => {
 			this.mouse.isOnCanvas = true;
 			this.mouse.active = true;
 		});
-		this.canvas.addEventListener('mouseleave', () => {
+		c.addEventListener('mouseleave', () => {
 			this.mouse.isOnCanvas = false;
 		});
-		this.canvas.addEventListener('touchstart', (e) => e.preventDefault());
+		c.addEventListener('touchstart', (e) => e.preventDefault());
 		// this stops the right click menu from appearing
-		this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-		this.canvas.resize = this.resizeCanvas;
-		this.canvas.hw = this.canvas.w * 0.5;
-		this.canvas.hh = this.canvas.h * 0.5;
-		this.camera.x = this.canvas.hw;
-		this.camera.y = this.canvas.hh;
+		c.addEventListener('contextmenu', (e) => e.preventDefault());
+		c.resize = this.resizeCanvas;
+		c.hw = c.w * 0.5;
+		c.hh = c.h * 0.5;
+		this.camera.x = c.hw;
+		this.camera.y = c.hh;
 		if (!userDisabledP5Errors) p5.disableFriendlyErrors = false;
 
 		/* prevent callout to copy image, etc when tap to hold */
@@ -8090,37 +8097,54 @@ main {
 	height: 100%;
 }`;
 		}
-		if (pixelated) {
+		style += `\n#${c.id} {`;
+		if (isPixelated) {
 			style += `
-#${this.canvas.id} {
 	image-rendering: pixelated;
-	width: ${w}px!important;
-	height: ${h}px!important;
-}`;
+	font-smooth: never;
+	-webkit-font-smoothing: none;
+`;
 		}
+		if (isFullScreen) {
+			if (c.w / c.h > window.innerWidth / window.innerHeight) style += 'width: 100%!important; height: auto!important;';
+			else style += 'height: 100%!important; width: auto!important;';
+		} else if (scale) {
+			style += `
+	width: ${c.w * scale}px!important;
+	height: ${c.h * scale}px!important;
+`;
+		}
+		style += '\n}';
 		let styleElem = document.createElement('style');
 		styleElem.innerHTML = style;
 		document.head.appendChild(styleElem);
 
-		if (pixelated) {
+		if (isPixelated) {
 			pInst.pixelDensity(1);
 			pInst.noSmooth();
+			pInst.textFont('monospace');
+			c.getContext('2d').imageSmoothingEnabled = false;
 		}
 
 		let idx = navigator.userAgent.indexOf('iPhone OS');
 		if (idx > -1) {
 			let version = navigator.userAgent.substring(idx + 10, idx + 12);
-			this.p5play.version = version;
-			if (version < 16) {
-				pInst.pixelDensity(1);
-			}
+			if (version < 16) pInst.pixelDensity(1);
 			this.p5play.os.platform = 'iOS';
 			this.p5play.os.version = version;
-		} else if (navigator.userAgentData !== undefined) {
-			this.p5play.os.platform = navigator.userAgentData.platform;
+		} else {
+			// for Chromium based browsers
+			let pl = navigator.userAgentData?.platform;
+			if (!pl && navigator.platform) {
+				pl = navigator.platform.slice(3);
+				if (pl == 'Mac') pl = 'macOS';
+				else if (pl == 'Win') pl = 'Windows';
+				else if (pl == 'Lin') pl = 'Linux';
+			}
+			this.p5play.os.platform = pl;
 		}
 
-		return can;
+		return rend;
 	};
 
 	// this is only for jsdoc
@@ -8327,9 +8351,15 @@ main {
 		_image.call(pInst, ...arguments);
 	};
 
-	// if the user isn't using q5.js
-	// add text caching to p5.js
+	let enableTextCache = false;
 	if (typeof this._textCache === 'undefined') {
+		// if the user isn't using q5.js
+		// add text caching to p5.js, only if the user is using p5.js v1.9.0 or later
+		try {
+			enableTextCache = Number(p5.VERSION.replaceAll('.', '')) >= 190;
+		} catch (e) {}
+	}
+	if (enableTextCache) {
 		const $ = this;
 		$._textCache = true;
 		$._TimedCache = class extends Map {
@@ -8432,11 +8462,12 @@ main {
 			str = str.toString();
 			const r = $._renderer;
 			if (!r._doFill && !r._doStroke) return;
-			let c, ti, k, cX, cY, _ascent, _descent;
 			const ctx = $.canvas.getContext('2d');
 			let t = ctx.getTransform();
 			let useCache = $._useCache || ($._textCache && (t.b != 0 || t.c != 0));
 			if (!useCache) return _text.call($, str, x, y, w, h);
+
+			let c, ti, k, cX, cY, _ascent, _descent;
 			k = _genTextImageKey(str, w, h);
 			ti = $._tic.get(k);
 			if (ti) {
@@ -8444,9 +8475,9 @@ main {
 				return;
 			}
 			let tg = $.createGraphics.call($, 1, 1);
-			tg.textFont(r._textFont);
-			if (r._textStyle) tg.textStyle(r._textStyle);
-			tg.textSize(r._textSize);
+			tg.textFont($.textFont());
+			if ($.textStyle()) tg.textStyle($.textStyle());
+			tg.textSize($.textSize());
 			c = tg.canvas.getContext('2d');
 			let lines = str.split('\n');
 			cX = 0;
@@ -8456,21 +8487,17 @@ main {
 			_descent = m.fontBoundingBoxDescent;
 			h ??= cY + _descent;
 			tg.resizeCanvas(Math.ceil(tg.textWidth(str)), Math.ceil(h));
-			c.fillStyle = ctx.fillStyle;
-			c.strokeStyle = ctx.strokeStyle;
-			c.lineWidth = ctx.lineWidth;
-			let f = c.fillStyle;
-			if (!r._fillSet) c.fillStyle = 'black';
+			tg.fill(ctx.fillStyle);
+			if (r._doStroke) {
+				tg.stroke(ctx.strokeStyle);
+				tg.strokeWeight(ctx.lineWidth);
+			} else tg.noStroke();
 			for (let i = 0; i < lines.length; i++) {
 				tg.text(lines[i], cX, cY);
 				cY += r._textLeading;
 				if (cY > h) break;
 			}
-			if (!r._fillSet) c.fillStyle = f;
 			ti = tg.get();
-			let pd = $.pixelDensity();
-			ti.width /= pd;
-			ti.height /= pd;
 			ti._ascent = _ascent;
 			ti._descent = _descent;
 			$._tic.set(k, ti);
