@@ -4885,6 +4885,7 @@ p5.prototype.registerMethod('init', function p5playInit() {
 			 * @type {Number}
 			 */
 			this.width;
+			
 
 			/**
 			 * Each group has a unique id number. Don't change it!
