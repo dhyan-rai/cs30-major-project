@@ -30,12 +30,17 @@ let bullets;
 
 
 //initializing guns
-let shotgun, sniper, ak47;
+let shotgun, pistol, ak47;
 let shotgunImg;
+let pistolImg;
+let shotgunIcon, pistolIcon, shotgunIconImg, pistolIconImg;
+let equippedGuns = [];
 
 //temp vars
-let ball;
+let ball, extraCanvas;
 
+//gui elements
+let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, inventory;
 
 function preload() {
   // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
@@ -47,7 +52,11 @@ function preload() {
   yellowTreeImg = loadImage("assets/tile-images/yellow-tree.png");
   flowerBasketImg = loadImage("assets/tile-images/flower-basket.png");
   smallRockImg = loadImage("assets/tile-images/small-rock.png");
-  shotgunImg = loadImage("assets/sprite-images/top-down-gun-2.png");
+  shotgunImg = loadImage("assets/sprite-images/shotgun-4.png");
+  pistolImg = loadImage("assets/sprite-images/pistol-2.png");
+  pistolIconImg = loadImage("assets/icons/pistol.png");
+  shotgunIconImg = loadImage("assets/icons/shotgun.png");
+  box1Img = loadImage("assets/inventory/inventory-box-blue.png");
 
 }
 
@@ -59,11 +68,13 @@ function setup() {
   bg.height *= 0.5;
 
 
-  new Canvas(windowWidth, windowHeight, "pixelated");
+  new Canvas(windowWidth, windowHeight);
+
   //creating player sprite
   player = new Sprite(1500, 1800);
-  player.w = 72;
-  player.h = 72;
+  player.w = 85;
+  player.h = 85;
+  // player.diameter = 125;
   // player.autoDraw = false;
   // player.debug = true;
   player.color = "black";
@@ -75,6 +86,7 @@ function setup() {
   player.drag = 0;
   player.scale = 0.25;
   player.layer = 5;
+  player.health = 20;
   // player.debug = true;
   // player.img = "assets/ball-img.png";
   
@@ -96,36 +108,43 @@ function setup() {
 
   //creating gun
   guns = new Group();
-  guns.mass = 0;
-  guns.collider = "n";
+  // guns.mass = 1000;
+  // guns.collider = "n";
   guns.equipped = false;
 
 
   //bullets
   bullets = new Group();
 
-  //guns creation
-  shotgun = new guns.Sprite();
-  shotgun.width = 20;
-  shotgun.height = 5;
-  shotgun.layer = 2;
-  // shotgun.offset.x = 25;
-  shotgun.gunType = "shotgun";
-  shotgun.range = 25;
-  shotgun.img = shotgunImg;
-  shotgun.scale = 0.3;
+  //gui
+  initGui();
 
+  //guns creation
+  initGuns();
+  // shotgun = new guns.Sprite(player.x, player.y);
+  // shotgun.img = shotgunImg;
+  // shotgun.removeColliders();
+  // shotgun.offset.y += -5;
+  // shotgun.offset.x += 35;
+  // shotgun.scale = 0.9;
+  // shotgun.layer = 2;
+  // shotgun.gunType = "shotgun";
+  // shotgun.range = 25;
+  // shotgun.len = 53;
+  // shotgun.rotationLock = true;
   // shotgun.bulletArray = [];
 
-  //sniper
-  sniper = new guns.Sprite(400, 200);
-  sniper.width = 50;
-  sniper.height = 10;
-  sniper.layer = 2;
-  // sniper.offset.x = 25;
-  sniper.gunType = "sniper";
-  sniper.range = 70;
-  // sniper.bulletArray = [];
+  //pistol
+  pistol = new guns.Sprite(player.x - 100, player.y);
+  pistol.img = pistolImg;
+  pistol.removeColliders();
+  pistol.layer = 2;
+  pistol.offset.x = 33;
+  pistol.len = 43;
+  pistol.scale = 0.6;
+  pistol.gunType = "pistol";
+  pistol.range = 70;
+  pistol.bulletArray = [];
 
   //ak47
   ak47 = new guns.Sprite(500, 200);
@@ -139,7 +158,7 @@ function setup() {
 
   for (let gun of guns) {
     gun.bulletArray = [];
-    gun.offset.x = 25;
+    // gun.offset.x = 25;
     gun.bounciness = 0;
     gun.friction = 0;
     gun.drag = 0;
@@ -150,7 +169,6 @@ function setup() {
   naturalResources = new Group();
   naturalResources.collider = "s";
   naturalResources.bounciness = 0;
-  // naturalResources.debug = true;
 
   //tree tiles
   taigaTrees = new naturalResources.Group();
@@ -351,96 +369,92 @@ function setup() {
     tree.scale = 0.4;
   }
 
-  
+  // allSprites.autoDraw = false;
+  camera.zoom = 1.4;
+  camera.x = player.x;
+  camera.y = player.y;
+
+  shotgun.icon = shotgunIcon;
+  // player.autoDraw = false;
 }
 
 function draw() {
   clear();
   
-
+  
   background(10);
   noStroke();
   camera.on();
-  image(bg, 0 - player.vel.x, 0 - player.vel.y);
+  
+  camera.x = (player.x);
+  camera.y = (player.y);
+  updateGui();
+  image(bg, 0, 0);
+  // player.draw();
   updatePlayerMovement();
-  camera.x = player.x - 2.5;
-  camera.y = player.y - 2.5;
-  // player.draw()
+  // camera.moveTo(player, 1.5);
 
   camera.off();
+  updateGuns();
 
   
-  updateGuns();
+  // box1.draw();
   // updateEnemies();
   // walls.draw();
   // guns.draw()
 
-  
+  // image(box1Img, 100, 100);
   // console.log(player.speed);
 }
 
+let spd = 0;
+let accel = 0.1;
 function updatePlayerMovement() {
   if (keyIsPressed) {
-    let spd = 3.4;
     if (keyIsDown(87)) {
-      player.moveTowards(player.position.x, player.position.y - 1, spd);
-      // player.vel.y = 0;
-      // player.vel.y -= player.accel;
+      // player.moveTowards(player.position.x, player.position.y - 0.5, spd);
+      player.direction = -90;
     }
     if (keyIsDown(83)) {
-      player.moveTowards(player.position.x, player.position.y + 1, spd);
-      // player.vel.y = 0;
-      // player.vel.y += player.accel;
+      // player.moveTowards(player.position.x, player.position.y + 0.1, spd);
+      player.direction = 90;
     }
     if (keyIsDown(68)) {
-      player.moveTowards(player.position.x + 1, player.position.y, spd);
-      // player.vel.x = 0;
-      // player.vel.x += 1;
+      // player.moveTowards(player.position.x + 1, player.position.y, spd);
+      player.direction = 0;
     }
     if (keyIsDown(65)) {
-      player.moveTowards(player.position.x - 1, player.position.y, spd);
-      // player.vel.x = 0;
-      // player.vel.x -= player.accel;
+      // player.moveTowards(player.position.x - 1, player.position.y, spd);
+      player.direction = 180;
     }
     if (keyIsDown(87) && keyIsDown(68)) {
-      player.moveTowards(player.position.x + 1, player.position.y - 1, spd);
-      // player.vel.y += player.accel;
+      // player.moveTowards(player.position.x + 1, player.position.y - 1, spd);
+      player.direction = -45;
     }
     if (keyIsDown(87) && keyIsDown(65)) {
-      player.moveTowards(player.position.x - 1, player.position.y - 1, spd);
+      // player.moveTowards(player.position.x - 1, player.position.y - 1, spd);
+      player.direction = -135;
     }
     if (keyIsDown(83) && keyIsDown(68)) {
-      player.moveTowards(player.position.x + 1, player.position.y + 1, spd);
+      // player.moveTowards(player.position.x + 1, player.position.y + 1, spd);
+      player.direction = 45;
     }
     if (keyIsDown(83) && keyIsDown(65)) {
-      player.moveTowards(player.position.x - 1, player.position.y + 1, spd);
+      // player.moveTowards(player.position.x - 1, player.position.y + 1, spd);
+      player.direction = 135;
+    }
+    player.speed = spd;
+    if(spd < 4) {
+      spd += accel;
     }
   }
   else {
-    player.vel.x = 0;
-    player.vel.y = 0;
-    if(player.accel > 0) {
-      player.accel -= 0.1;
-    }
-    camOffsetY = 0;
-    camOffsetX = 0;
+    player.speed = 0;
+    spd = 0;
   }
 
-  // player.rotateTowards(mouse, 1.2, 1);
-  // if(mouseIsPressed) {
-  //   player.ani.play();
-  // }
-  // else {
-  //   player.ani.frame = 0;
-  //   player.ani.stop();
-  // }
 }
 
-
-// function retainPosition() {
-//   obstacle.pos.x = width/2;
-//   obstacle.pos.y = height/2;
-// }
 
 function updateGuns() {
   for (let gun of guns) {
@@ -471,20 +485,26 @@ function updateGuns() {
 
 function equipGun(gun, player) {
   gun.equipped = true;
+  gun.equip();
   gun.pos.x = player.pos.x;
   gun.pos.y = player.pos.y;
+  gun.layer = 6;
   // gun.rotation = player.rotation;
   // new GlueJoint(player, gun);
   gun.rotateTowards(mouse, 1.2, 1);
+  equippedGuns.push(gun);
 }
 
 function unequipGun(gun) {
   // player.joints.removeAll();
   gun.equipped = false;
+  gun.unequip();
   gun.velocity.x = 0;
   gun.velocity.y = 0;
   gun.rotationDrag = 0;
   gun.rotationSpeed = 0;
+  gun.layer = 2;
+  gun.icon.visible = false;
 }
 
 function shootBullet(gun) {
@@ -492,7 +512,7 @@ function shootBullet(gun) {
     for (let i = 0; i <= 10; i++) {
 
       //position from an angle
-      let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width + 5);
+      let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.len);
       let gunPosTemp = createVector(gun.x, gun.y);
       let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
       // bulletPos.setMag(1);
@@ -511,23 +531,23 @@ function shootBullet(gun) {
       gun.bulletArray.push(bullet);
     }
   }
-  if (gun.gunType === "sniper") {
+  if (gun.gunType === "pistol") {
 
     //position from an angle
-    let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.width);
+    let bulletTemp = p5.Vector.fromAngle(radians(gun.rotation), gun.len);
     let gunPosTemp = createVector(gun.x, gun.y);
     let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
 
     let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
 
-    bullet.diameter = 11.5;
+    bullet.diameter = 6;
     bullet.color = "yellow";
     bullet.direction = gun.rotation;
     bullet.speed = random(10, 12);
     bullet.collider = "d";
     bullet.layer = 1;
     bullet.life = gun.range;
-    bullet.mass = 20;
+    bullet.mass = 5;
     gun.bulletArray.push(bullet);
   }
   
@@ -583,4 +603,57 @@ function updateEnemies() {
   }
 }
 
+function initGui() {
+  box1 = new Sprite(player.x + 220, player.y + 160);
+  // box1.autoDraw = false;
+  box1.img = box1Img;
+  box1.layer = 6;
+  box1.removeColliders();
+  box1.scale = 1.5;
 
+  shotgunIcon = new Sprite();
+  shotgunIcon.layer = 7;
+  shotgunIcon.img = shotgunIconImg;
+  shotgunIcon.rotate(-35);
+  shotgunIcon.removeColliders();
+  shotgunIcon.scale = 0.07;
+  shotgunIcon.visible = false;
+}
+
+function initGuns() {
+  shotgun = new guns.Sprite(player.x, player.y);
+  shotgun.unequip = function() {
+    shotgun.img = shotgunIconImg;
+    shotgun.removeColliders();
+    shotgun.scale = 0.07;
+  }
+  shotgun.unequip();
+  // shotgun.offset.y += -5;
+  // shotgun.offset.x += 35;
+  shotgun.layer = 2;
+  shotgun.gunType = "shotgun";
+  shotgun.range = 25;
+  shotgun.len = 53;
+  shotgun.rotationLock = true;
+  shotgun.bulletArray = [];
+
+  shotgun.equip = function() {
+  shotgun.img = shotgunImg;
+  shotgun.removeColliders();
+  shotgun.offset.y = -5;
+  shotgun.offset.x = 35;
+  shotgun.scale = 0.9;
+  }
+}
+
+function updateGui() {
+  box1.x = player.x + 220;
+  box1.y = player.y + 160;
+  for(let gun of equippedGuns) {
+    if(gun.equipped) {
+      gun.icon.x = box1.x + 3;
+      gun.icon.y = box1.y;
+      gun.icon.visible = true;
+    }
+  }
+}
