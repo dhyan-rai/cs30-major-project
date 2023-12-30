@@ -40,7 +40,7 @@ let shotgunIcon, pistolIcon, shotgunIconImg, pistolIconImg;
 let ball, extraCanvas;
 
 //gui elements
-let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, boxes = [box1, box2, box3], inventory = [];
+let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg;
 
 function preload() {
   // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
@@ -57,6 +57,7 @@ function preload() {
   pistolIconImg = loadImage("assets/icons/pistol.png");
   shotgunIconImg = loadImage("assets/icons/shotgun.png");
   box1Img = loadImage("assets/inventory/inventory-box-blue.png");
+  selectionBoxImg = loadImage("assets/inventory/selection-box.png");
 
 }
 
@@ -64,7 +65,7 @@ function setup() {
 
   angleMode(DEGREES);
 
-  cursor("assets/cursor-heart.gif");
+  cursor("assets/icons/shotgun.png");
 
   bg.width *= 0.5;
   bg.height *= 0.5;
@@ -121,6 +122,13 @@ function setup() {
     // this.inventory.push(gun);
     // this.currentGun = gun;
   }
+
+  player.unEquipGun = function() {
+    player.activeSlot.gun.isUnequipped()
+    player.activeSlot.full = false;
+    delete player.activeSlot.gun;
+    // console.log("whta")
+  }
   // player.debug = true;
   // player.img = "assets/ball-img.png";
   
@@ -144,7 +152,7 @@ function setup() {
   guns = new Group();
   // guns.mass = 1000;
   // guns.collider = "n";
-  guns.equipped = false;
+  // guns.equipped = false;
 
 
   //bullets
@@ -423,7 +431,7 @@ function draw() {
   camera.x = (player.x);
   camera.y = (player.y);
   updateGui();
-  image(bg, 0, 0);
+  image(bg, 0 - player.vel.x, 0 - player.vel.y);
   // player.draw();
   updatePlayerMovement();
   // camera.moveTo(player, 1.5);
@@ -625,7 +633,7 @@ function initGui() {
   box1 = new Sprite(player.x + 220, player.y + 160);
   // box1.autoDraw = false;
   box1.img = box1Img;
-  box1.layer = 6;
+  box1.layer = 7;
   box1.removeColliders();
   box1.scale = 1.5;
   box1.taken = false;
@@ -644,13 +652,13 @@ function initGui() {
   box3.scale = 1.5;
   box3.taken = false;
 
-  shotgunIcon = new Sprite();
-  shotgunIcon.layer = 7;
-  shotgunIcon.img = shotgunIconImg;
-  shotgunIcon.rotate(-35);
-  shotgunIcon.removeColliders();
-  shotgunIcon.scale = 0.07;
-  shotgunIcon.visible = false;
+  selectionBox = new Sprite(box1.x + 10, box1.y);
+  selectionBox.img = selectionBoxImg;
+  selectionBox.layer = 6;
+  selectionBox.removeColliders();
+  selectionBox.scale = 2.2;
+
+
 }
 
 function initGuns() {
@@ -663,11 +671,18 @@ function initGuns() {
   shotgun.rotationLock = true;
   shotgun.bulletArray = [];
   shotgun.inInventory = false;
-  shotgun.stashed = false;
 
+  //creating shotgun logo for the gui
+  shotgunIcon = new Sprite();
+  shotgunIcon.layer = 8;
+  shotgunIcon.img = shotgunIconImg;
+  shotgunIcon.rotate(-35);
+  shotgunIcon.removeColliders();
+  shotgunIcon.scale = 0.07;
+  shotgunIcon.visible = false;
   shotgun.img = shotgunIconImg;
-  shotgun.equippedImg = shotgunImg;
   shotgun.scale = 0.07;
+  // shotgun.debug = true;
 
 
   // shotgun.equip = function(user) {
@@ -691,9 +706,11 @@ function initGuns() {
     this.scale = 0.9;
     this.x = this.owner.x;
     this.y = this.owner.y;
+    // this.rotationLock = true;
     this.rotateTowards(mouse, 1.2, 1);
-    this.equipped = true;
+    // this.equipped = true;
     this.inInventory = true;
+    // console.log("hi")
   }
 
   shotgun.updateWhileEquipped = function() {
@@ -723,11 +740,25 @@ function initGuns() {
       bullet.bounce = 0.8;
       bullet.life = this.range + random(-5, 5);
       bullet.mass = 5;  
-      this.bulletArray.push(bullet);
+      // this.bulletArray.push(bullet);
     }
   }
   shotgun.stash = function() {
     this.stashed = true;
+  }
+
+  shotgun.isUnequipped = function() {
+    // this.img = shotgunIconImg;
+    // this.removeColliders();
+    // this.scale = 0.07;
+    this.inInventory = false;
+    this.layer = 2;
+    this.rotationSpeed = 0;
+    this.icon.visible = false;
+    this.img = shotgunIconImg;
+    this.scale = 0.07;
+    this.offset.x = -5;
+    this.offset.y = 5;
   }
 
   //pistol
@@ -737,13 +768,22 @@ function initGuns() {
   pistol.bulletArray = [];
   pistol.gunType = "pistol";
   pistol.range = 70;
-
-  pistol.img = pistolImg;
-  pistol.offset.x = 33;
   pistol.len = 43;
-  pistol.scale = 0.6;
-  pistol.stashed = false;
-  pistol.equipped = false;
+
+  pistol.img = pistolIconImg;
+  pistol.scale = 0.1;
+  // pistol.debug = true;
+  pistol.inInventory = false;
+
+  pistolIcon = new Sprite()
+  pistolIcon.removeColliders();
+  pistolIcon.img = pistolIconImg;
+  pistolIcon.scale = 0.18;
+  pistolIcon.visible = false;
+  pistolIcon.rotate(-25);
+  pistolIcon.offset.x = 2;
+  pistol.icon = pistolIcon;
+  
 
   pistol.stash = function() {
     this.stashed = true;
@@ -757,7 +797,7 @@ function initGuns() {
     this.x = this.owner.x;
     this.y = this.owner.y;
     this.rotateTowards(mouse, 1.2, 1);
-    this.equipped = true;
+    // this.equipped = true;
     this.inInventory = true;
   }
 
@@ -766,17 +806,19 @@ function initGuns() {
     let gunPosTemp = createVector(this.x, this.y);
     let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
 
+    // let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
     let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
-
+    
+    bullet.life = this.range;
     bullet.diameter = 6;
-    bullet.color = "yellow";
+    bullet.color = "black";
     bullet.direction = this.rotation;
     bullet.speed = random(10, 12);
     bullet.collider = "d";
     bullet.layer = 1;
-    bullet.life = this.range;
     bullet.mass = 5;
-    this.bulletArray.push(bullet);
+    // console.log(bullet.life)
+    // this.bulletArray.push(bullet);
   }
   pistol.updateWhileEquipped = function() {
     this.x = this.owner.x;
@@ -785,6 +827,134 @@ function initGuns() {
       this.rotateTowards(mouse, 1.2, 1)
     }
   }
+  
+  pistol.isUnequipped = function() {
+    this.inInventory = false;
+    this.layer = 2;
+    this.rotationSpeed = 0;
+    this.img = pistolIconImg;
+    this.scale = 0.1;
+    this.offset.x = 0;
+    this.icon.visible = false;
+  }
+
+
+  // //temp gun
+  // ak47 = new guns.Sprite(player.x + 400, player.y);
+  // ak47.removeColliders();
+  // ak47.layer = 2;
+  // ak47.bulletArray = [];
+  // ak47.gunType = "ak47";
+  // ak47.range = 70;
+
+  // ak47.img = pistolImg;
+  // ak47.offset.x = 33;
+  // ak47.len = 43;
+  // ak47.scale = 0.6;
+  // // ak47.stashed = false;
+  // // ak47.equipped = false;
+  // ak47.inInventory = false;
+
+  // ak47.stash = function() {
+  //   this.stashed = true;
+  // }
+  
+  // ak47.isEquipped = function()   {
+  //   this.img = pistolImg;
+  //   this.layer = 6;
+  //   this.offset.x = 33;
+  //   this.scale = 0.6;
+  //   this.x = this.owner.x;
+  //   this.y = this.owner.y;
+  //   this.rotateTowards(mouse, 1.2, 1);
+  //   // this.equipped = true;
+  //   this.inInventory = true;
+  // }
+
+  // ak47.shoot = function() {
+  //   let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
+  //   let gunPosTemp = createVector(this.x, this.y);
+  //   let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+
+  //   // let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+  //   let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+    
+  //   bullet.life = this.range;
+  //   bullet.diameter = 6;
+  //   bullet.color = "black";
+  //   bullet.direction = this.rotation;
+  //   bullet.speed = random(10, 12);
+  //   bullet.collider = "d";
+  //   bullet.layer = 1;
+  //   bullet.mass = 5;
+  //   // console.log(bullet.life)
+  //   // this.bulletArray.push(bullet);
+  // }
+  // ak47.updateWhileEquipped = function() {
+  //   this.x = this.owner.x;
+  //   this.y = this.owner.y;
+  //   if(this.owner === player) {
+  //     this.rotateTowards(mouse, 1.2, 1)
+  //   }
+  // }
+
+  // uzi = new guns.Sprite(player.x + 300, player.y);
+  // uzi.removeColliders();
+  // uzi.layer = 2;
+  // uzi.bulletArray = [];
+  // uzi.gunType = "ak47";
+  // uzi.range = 70;
+
+  // uzi.img = pistolImg;
+  // uzi.offset.x = 33;
+  // uzi.len = 43;
+  // uzi.scale = 0.6;
+  // // ak47.stashed = false;
+  // // ak47.equipped = false;
+  // uzi.inInventory = false;
+
+  // uzi.stash = function() {
+  //   this.stashed = true;
+  // }
+  
+  // uzi.isEquipped = function()   {
+  //   this.img = pistolImg;
+  //   this.layer = 6;
+  //   this.offset.x = 33;
+  //   this.scale = 0.6;
+  //   this.x = this.owner.x;
+  //   this.y = this.owner.y;
+  //   this.rotateTowards(mouse, 1.2, 1);
+  //   // this.equipped = true;
+  //   this.inInventory = true;
+  // }
+
+  // uzi.shoot = function() {
+  //   let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
+  //   let gunPosTemp = createVector(this.x, this.y);
+  //   let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+
+  //   // let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+  //   let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+    
+  //   bullet.life = this.range;
+  //   bullet.diameter = 6;
+  //   bullet.color = "black";
+  //   bullet.direction = this.rotation;
+  //   bullet.speed = random(10, 12);
+  //   bullet.collider = "d";
+  //   bullet.layer = 1;
+  //   bullet.mass = 5;
+  //   // console.log(bullet.life)
+  //   // this.bulletArray.push(bullet);
+  // }
+  // uzi.updateWhileEquipped = function() {
+  //   this.x = this.owner.x;
+  //   this.y = this.owner.y;
+  //   if(this.owner === player) {
+  //     this.rotateTowards(mouse, 1.2, 1)
+  //   }
+  // }
 }
 
 function updateGui() {
@@ -797,23 +967,34 @@ function updateGui() {
   box3.x = player.x + 390;
   box3.y = player.y + 160;
 
-  // for (let gun of guns){
-  //   if (gun.inInventory === false) {
-  //     gun.icon.visible = false;
-  //   }
-  // }
+  if(player.activeSlot === player.slot1) {
+    selectionBox.x = box1.x;
+    selectionBox.y = box1.y;
+  }
+  else if(player.activeSlot === player.slot2) {
+    selectionBox.x = box2.x;
+    selectionBox.y = box2.y;
+  }
+  else if(player.activeSlot === player.slot3) {
+    selectionBox.x = box3.x;
+    selectionBox.y = box3.y;
+  }
 
-  // for(let gun of equippedGuns) {
-  //   for (let box of boxes) {
-  //     if (box.taken === false){
-  //       box.gun = gun;
-  //       // gun.icon.x = box.x + 3;
-  //       // gun.icon.y = box.y;
-  //       // gun.icon.visible = true;
-  //       box.taken = true;
-  //     }
-  //   }
-  // }
+  if(player.slot1.full === true) {
+    player.slot1.gun.icon.x = box1.x;
+    player.slot1.gun.icon.y = box1.y;
+    player.slot1.gun.icon.visible = true;
+  }
+  if(player.slot2.full === true) {
+    player.slot2.gun.icon.x = box2.x;
+    player.slot2.gun.icon.y = box2.y;
+    player.slot2.gun.icon.visible = true;
+  }
+  if(player.slot3.full === true) {
+    player.slot3.gun.icon.x = box3.x;
+    player.slot3.gun.icon.y = box3.y;
+    player.slot3.gun.icon.visible = true;
+  }
 }
 
 function updateInventory() {
@@ -823,73 +1004,50 @@ function updateInventory() {
       break;
     }
     else{
-      player.inventoryisFull = true;
+      player.inventoryIsFull = true;
     }
   }
   // selectInvSlot();
 }
 
 function updateGuns() {
-  for (let gun of guns) {
-    for (let slot of player.inventory) {
-      if (slot.full === true && slot !== player.activeSlot) {
-        slot.gun.visible = false;
-        slot.gun.equipped = false;
-        slot.gun.x = slot.gun.owner.x;
-        slot.gun.y = slot.gun.owner.y;
-      }
-    }
-
-    if(gun.equipped === false && kb.presses("e") && dist(player.x, player.y, gun.x, gun.y) < 50 && player.inventoryIsFull === false && gun.stashed === false) {
-      player.equipGun(gun);
-    }
-
-
-
-    if (player.activeSlot.full === true) {
-      player.activeSlot.gun.visible = true;
-      player.activeSlot.gun.updateWhileEquipped();
-      if(mouse.presses()) {
-        player.activeSlot.gun.shoot();
-      }
+  
+  for (let slot of player.inventory) {
+    if (slot.full === true && slot !== player.activeSlot) {
+      slot.gun.visible = false;
+      slot.gun.x = slot.gun.owner.x;
+      slot.gun.y = slot.gun.owner.y;
     }
   }
-  // for (let gun of guns) {
-  //   if (gun.equipped === false && kb.presses("e") && dist(player.x, player.y, gun.x, gun.y) < 50) {
-  //     equipGun(gun, player);
-  //   }
-  //   else if (gun.equipped === true && kb.presses("e")){
-  //     unequipGun(gun);
-  //   }
-  //   else if (gun.equipped) {
-  //     //update gun rotation
-  //     gun.pos.x = player.pos.x;
-  //     gun.pos.y = player.pos.y;
-  //     // gun.rotation = player.rotation;
-  //     // new GlueJoint(player, gun);
-  //     gun.rotateTowards(mouse, 1.2, 1);
 
-  //     //shooting bullets when mouse pressed
-  //     if (mouse.presses()) {
-  //       shootBullet(gun);
-  //     }
+  let gunInVicinity = guns.some(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
+  if(kb.presses("e")){
+    if(gunInVicinity){
+      let gun = guns.find(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
+        if ( player.inventoryIsFull === false) {
+          player.equipGun(gun);
+        }
+        else {
+          player.unEquipGun();
+          player.equipGun(gun);
+          console.log("working")
+        }
+    }
+    else if(player.activeSlot.full){
+      player.unEquipGun();
+    }
+    
+  } 
 
-  //     //updating bullets
-  //     updateBullets(gun);
-  //   }
-  // }
+                 
+
+  if (player.activeSlot.full === true) {
+    player.activeSlot.gun.visible = true;
+    player.activeSlot.gun.updateWhileEquipped();
+    if(mouse.presses()) {
+      player.activeSlot.gun.shoot();
+    }
+  }
 }
 
 
-
-function selectInvSlot() {
-  if(kb.presses("j")) {
-    player.activeSLot = player.slot1;
-  }
-  if(kb.presses("k")) {
-    player.activeSLot = player.slot2;
-  }
-  if(kb.presses("l")) {
-    player.activeSLot = player.slot3;
-  }
-}
