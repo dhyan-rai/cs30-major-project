@@ -1,30 +1,160 @@
-let bg, bgTileMap;
-
-function preload() {
-  bg = loadImage("TileMap_test1.png");
-  bgTileMap = loadTiledMap("tile-map-1");
-}
+let easystar, ball, path, grid, something, otherThing, thing1, thing2, thing3;
 
 function setup() {
-  createCanvas(400, 400);
-  imageMode(CENTER);
+  createCanvas(windowWidth, windowHeight);
+  easystar = new EasyStar.js();
+  // easystar.setIterationsPerCalculation(20);
+  grid = [[0,0,1,0,0],
+          [0,0,1,0,1],
+          [1,0,1,0,0],
+          [0,0,0,0,1],
+          [1,0,0,0,0],
+          [0,0,0,1,0]];
+  easystar.setGrid(grid);
+  easystar.setAcceptableTiles([0]);
+
+  xOff = 10;
+  yOff = 10;
+
+  for (let i = 0; i < grid.length; i++) {
+    for(let j = 0; j < grid[i].length; j++) {
+      // if(grid[i][j] === 1) {
+        // push()
+        noFill();
+        let gridBox = new Sprite(16*j + xOff, 16*i + yOff, 10, 10, "n");
+        gridBox.color = "black";
+        // pop();
+      // }
+    }
+  }
+
+  for (let i = 0; i < grid.length; i++) {
+    for(let j = 0; j < grid[i].length; j++) {
+      if(grid[i][j] === 1) {
+        new Sprite(16*j + xOff, 16*i + yOff, 10, 10, "n");
+      }
+    }
+  }
+  thing1 = new Sprite(16*2 + xOff, 0 + yOff, 10, 10, "n");
+  thing2 = new Sprite(16*2 + xOff, 16 + yOff, 10, 10, "n");
+  thing3 = new Sprite(16*2 + xOff, 16*2 + yOff, 10, 10, "n");
+
+  ball = new Sprite(xOff, yOff, 10);
+
+  easystar.findPath(0, 0, 4, 0, function( path ) {
+    if (path === null) {
+      // alert("Path was not found.");
+    } else {
+      // alert("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+      thePath = path;
+    }
+  });    
+     
+  // easystar.calculate();
+  easystar.calculate();
 }
 
+let moving, reached = true, findingPath, pathFound = false;;
 function draw() {
   background(220);
-  bgTileMap.draw(0, 0);
-  // camera.on();
-  // image(bg, -200, 0);
-  // camera.x = mouseX;
-  // camera.y = mouseY;
-  // camera.off();
+
+  randomPathFind();
+
 }
 
-function keyTyped() {
-  if(key === 'w') {
-    camera.zoom += 0.2;
-  }  
+
+function randomPathFind() {
+
+  if (reached) {
+    if(thePath.length > 1){
+      newPathStart = thePath[thePath.length-1]
+      thePath.shift();
+      nextPoint = thePath[0];
+    }
+    else{
+      let newX = newPathStart.x;
+      let newY = newPathStart.y;
+      
+      let xRandom = round(random(-2, 2));
+      while(newX + xRandom > grid[0].length-1 || newX + xRandom < 0) {
+        xRandom = round(random(-2, 2));
+      }
+      let yRandom = round(random(-2, 2));
+      while(newY + yRandom > grid.length-1 || newY + yRandom < 0) {
+        yRandom = round(random(-2, 2));
+      }
+      
+      newX += xRandom;
+      newY += yRandom;
+
+      easystar.findPath(newPathStart.x, newPathStart.y, newX, newY, function( path ) {
+        if (path === null) {
+          // alert("Path was not found.");
+        } else {
+          // alert("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+          thePath = path;
+        }
+      }); 
+    }
+  }
+  if(!moving) {
+    ball.moveTo(nextPoint.x*16 + xOff, nextPoint.y*16 + yOff);
+    moving = true;
+    reached = false;
+  }
+  if(ball.x === nextPoint.x*16 + xOff && ball.y === nextPoint.y*16 + yOff) {
+    reached = true;
+    moving = false;
+  }
+  easystar.calculate();
 }
+
+function findNewPath() {
+  let aPath;
+  let foundPath = false;
+  easystar.findPath(4, 3, 0, 0, function( path ) {
+    if (path === null) {
+      // alert("Path was not found.");
+    } else {
+      // alert("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+      foundPath = true;
+      aPath = path;
+    }
+  }); 
+  if(foundPath) {
+    return aPath;
+  }
+  else {
+    return []
+  };
+}
+// let bg, bgTileMap;
+
+// function preload() {
+//   bg = loadImage("TileMap_test1.png");
+//   bgTileMap = loadTiledMap("tile-map-1");
+// }
+
+// function setup() {
+//   createCanvas(400, 400);
+//   imageMode(CENTER);
+// }
+
+// function draw() {
+//   background(220);
+//   bgTileMap.draw(0, 0);
+//   // camera.on();
+//   // image(bg, -200, 0);
+//   // camera.x = mouseX;
+//   // camera.y = mouseY;
+//   // camera.off();
+// }
+
+// function keyTyped() {
+//   if(key === 'w') {
+//     camera.zoom += 0.2;
+//   }  
+// }
 
 
 
