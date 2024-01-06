@@ -21,18 +21,22 @@ let flowerBaskets, flowerBasketImg;
 let naturalResources;
 
 //entities
-let enemies, enemy, player, entities;
+let enemies, player, entities;
 
 
 //bullets
-let bullets;
+let bullets, ammos;
+let shotgunAmmoImg, sniperAmmoImg, pistolAmmoImg;
 
 
 //initializing guns
-let shotgun, pistol, ak47;
+let shotgun, pistol, sniper;
 let shotgunImg;
 let pistolImg;
+let sniperImg;
 let shotgunIcon, pistolIcon, shotgunIconImg, pistolIconImg;
+let sniperIcon, sniperIconImg;
+
 // let equippedGuns = [];
 
 //temp vars
@@ -41,9 +45,22 @@ let ball, extraCanvas;
 //gui elements
 let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg;
 
+//pathfinding vars
+let easystar, grid, referenceBoxes;
+
 function preload() {
   // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
   // bgResources = loadImage("assets/test-maps/tile-map-resources-1.png")
+  
+
+  //loading in navmesh
+  loadJSON("mapdata.json", function(data){
+    grid = data.obstacles;
+  });
+  
+
+
+  //textures
   bg = loadImage("assets/test-maps/base-layer-1.png")
   wallImg = loadImage("assets/wall.png");
   taigaTreeImg = loadImage("assets/tile-images/taiga_tree.png")
@@ -51,24 +68,47 @@ function preload() {
   yellowTreeImg = loadImage("assets/tile-images/yellow-tree.png");
   flowerBasketImg = loadImage("assets/tile-images/flower-basket.png");
   smallRockImg = loadImage("assets/tile-images/small-rock.png");
-  shotgunImg = loadImage("assets/sprite-images/shotgun-4.png");
-  pistolImg = loadImage("assets/sprite-images/pistol-2.png");
-  pistolIconImg = loadImage("assets/icons/pistol.png");
-  shotgunIconImg = loadImage("assets/icons/shotgun.png");
+  shotgunImg = loadImage("assets/gun-assets/topdown-images/shotgun-4.png");
+  pistolImg = loadImage("assets/gun-assets/topdown-images/pistol-2.png");
+  pistolIconImg = loadImage("assets/gun-assets/icons/pistol.png");
+  sniperImg = loadImage("assets/gun-assets/topdown-images/sniper.png");
+  sniperIconImg = loadImage("assets/gun-assets/icons/sniper2.png");
+  shotgunIconImg = loadImage("assets/gun-assets/icons/shotgun.png");
   box1Img = loadImage("assets/inventory/inventory-box-blue.png");
   selectionBoxImg = loadImage("assets/inventory/selection-box.png");
+
+  // shotgunAmmoImg = loadImage()
 
 }
 
 function setup() {
 
+  rectMode(CENTER)
   angleMode(DEGREES);
+
 
   // cursor("assets/icons/shotgun.png");
 
   bg.width *= 0.5;
   bg.height *= 0.5;
 
+
+  //easystar
+  referenceBoxes = new Group();
+  easystar = new EasyStar.js();
+  easystar.setGrid(grid);
+  easystar.setAcceptableTiles([0]);
+
+  // for(let i = 0; i < grid.length; i++) {
+  //   for(let j = 0; j < grid[i].length; j++) {
+  //     let sideLength = 45/2;
+  //     if(grid[i][j] === 1) {
+  //       let bob = new referenceBoxes.Sprite(j*44/2 + sideLength/2, i*44/2 + sideLength/2, sideLength, sideLength, "n");
+  //       bob.layer = 10;
+  //     }
+  //     // text(j*44/2 + sideLength/2, i*44/2 + sideLength/2, "hi")
+  //   }
+  // }
 
   new Canvas(windowWidth, windowHeight);
 
@@ -99,7 +139,20 @@ function setup() {
   player.slot3 = {full: false};
   player.inventory = [player.slot1, player.slot2, player.slot3];
   player.activeSlot = player.slot1;
-  // player.autoDraw = false;
+  player.shotgunAmmo = 10;
+  player.sniperAmmo = 10;
+  player.pistolAmmo = 10;
+  player.reloadTimer = new Timer(4000);
+
+
+
+  player.reloadShotgun = function() {
+    // player.reloadTimer.start();
+    if(this.reloadTimer.getRemainingTime() % 100 === 0) {
+      this.shotgunAmmo += 1;
+    }
+    if(expired)
+  }
 
 
   player.equipGun = function(gun) {
@@ -145,13 +198,16 @@ function setup() {
   enemies.scale = 0.25;
   enemies.layer = 5;
   // enemy = new enemies.Sprite(50, 50);
-  for(let i = 0; i <= 10; i++) {
-    let enem = new enemies.Sprite(random(4400), random(4400));
-    enem.vel.x = random(-3, 3);
-    enem.vel.y = random(-3, 3);
-
-  }
-
+  // for(let i = 0; i < 20; i++) {
+  //   // let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
+  //   let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
+  //   enemy.path = [{x: round((enemy.x - sideLength/2) / 22), y: round((enemy.y - sideLength/2) / 22)}]
+  //   enemy.startPos = enemy.path[0];
+  //   enemy.nextPoint = enemy.path[0];
+  //   enemy.reached = true;
+  //   enemy.moving = false;
+  //   enemy.testArr = [];
+  // }
 
   //creating gun
   guns = new Group();
@@ -162,6 +218,18 @@ function setup() {
 
   //bullets
   bullets = new Group();
+  ammos = new Group();
+  shotgunAmmos = new ammos.Group();
+  for(let i = 0; i < 1; i++) {
+    let shotgunAmmo = new shotgunAmmos.Sprite();
+    shotgunAmmo.removeColliders();
+    shotgunAmmo.isPicked = function() {
+      player.reloadShotgun();
+      player.reloadTimer.start();
+      player.reloading = true;
+      this.remove();
+    }
+  }
 
   //gui
   initGui();
@@ -385,6 +453,10 @@ function setup() {
 
   shotgun.icon = shotgunIcon;
   // player.autoDraw = false;
+
+  easystar.setIterationsPerCalculation(5);
+  easystar.enableCornerCutting();
+  // easystar.enableSync();
 }
 
 function draw() {
@@ -394,21 +466,23 @@ function draw() {
   background(10);
   noStroke();
   camera.on();
-
+  
   camera.x = (player.x);
   camera.y = (player.y);
   updateGui();
-  image(bg, 0 - player.vel.x, 0 - player.vel.y);
+  image(bg, 0, 0);
   // player.draw();
   updatePlayerMovement();
   // camera.moveTo(player, 1.5);
-
+  
+  // drawGrid();
   camera.off();
+  // trackPlayer();
 
-  trackPlayer();
 
   updateGuns();
   updateInventory();
+
 }
 
 function keyPressed() {
@@ -426,12 +500,13 @@ function keyPressed() {
 let spd = 0;
 let accel = 0.1;
 function updatePlayerMovement() {
+  let maxSpd = 5;
   if (keyIsPressed && ["w", "s", "a", "d"].includes(key)) {
     if (keyIsDown(87)) {
       // player.moveTowards(player.position.x, player.position.y - 0.5, spd);
       player.direction = -90;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -439,7 +514,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x, player.position.y + 0.1, spd);
       player.direction = 90;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -447,7 +522,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x + 1, player.position.y, spd);
       player.direction = 0;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -455,7 +530,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x - 1, player.position.y, spd);
       player.direction = 180;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -463,7 +538,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x + 1, player.position.y - 1, spd);
       player.direction = -45;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -471,7 +546,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x - 1, player.position.y - 1, spd);
       player.direction = -135;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -479,7 +554,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x + 1, player.position.y + 1, spd);
       player.direction = 45;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -487,7 +562,7 @@ function updatePlayerMovement() {
       // player.moveTowards(player.position.x - 1, player.position.y + 1, spd);
       player.direction = 135;
       player.speed = spd;
-      if(spd < 4) {
+      if(spd < maxSpd) {
         spd += accel;
       }
     }
@@ -564,7 +639,10 @@ function initGuns() {
   shotgun.rotationLock = true;
   shotgun.bulletArray = [];
   shotgun.inInventory = false;
+  // shotgun.timer = new Timer(5000);
   shotgun.bullets = new bullets.Group();
+
+  // shotgun.timer.endTimer();
 
   //creating shotgun logo for the gui
   shotgunIcon = new Sprite();
@@ -600,30 +678,36 @@ function initGuns() {
     }
   }
   shotgun.shoot = function() {
-    for (let i = 0; i <= 10; i++) {
-
-      //position from an angle
-      let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
-      let gunPosTemp = createVector(this.x, this.y);
-      let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
-      // bulletPos.setMag(1);
-
-      let bullet = new this.bullets.Sprite(bulletPos.x, bulletPos.y);
-
-      bullet.diameter = 5;
-      bullet.color = "white";
-      bullet.direction = this.rotation + random(-10,10);
-      bullet.speed = random(13, 15);
-      bullet.collider = "d";
-      bullet.layer = 1;
-      bullet.bounce = 0.8;
-      bullet.life = this.range + random(-5, 5);
-      bullet.mass = 3;  
-      bullet.bounciness = 0.8;
-      bullet.update = () => {
-        bullet.scale *= 0.99;
+    if((this.timer === undefined || this.timer.expired())){
+      if(this.timer === undefined) {
+        this.timer = new Timer(500);
       }
-      // this.bulletArray.push(bullet);
+      for (let i = 0; i <= 10; i++) {
+        
+        //position from an angle
+        let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
+        let gunPosTemp = createVector(this.x, this.y);
+        let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+        // bulletPos.setMag(1);
+  
+        let bullet = new this.bullets.Sprite(bulletPos.x, bulletPos.y);
+  
+        bullet.diameter = 5;
+        bullet.color = "white";
+        bullet.direction = this.rotation + random(-10,10);
+        bullet.speed = random(13, 15);
+        bullet.collider = "d";
+        bullet.layer = 1;
+        bullet.bounce = 0.8;
+        bullet.life = this.range + random(-5, 5);
+        bullet.mass = 3;  
+        bullet.bounciness = 0.8;
+        bullet.update = () => {
+          bullet.scale *= 0.99;
+        }
+        // this.bulletArray.push(bullet);
+      }
+      shotgun.timer.start();
     }
   }
 
@@ -639,6 +723,7 @@ function initGuns() {
     this.scale = 0.07;
     this.offset.x = -5;
     this.offset.y = 5;
+    // this.timer = undefined;
   }
 
   //pistol
@@ -648,7 +733,7 @@ function initGuns() {
   pistol.bulletArray = [];
   pistol.gunType = "pistol";
   pistol.range = 70;
-  pistol.len = 43;
+  pistol.len = 39;
   pistol.img = pistolIconImg;
   pistol.scale = 0.1;
   pistol.inInventory = false;
@@ -711,7 +796,88 @@ function initGuns() {
     this.offset.x = 0;
     this.icon.visible = false;
   }
+
+
+  //pistol
+  sniper = new guns.Sprite(player.x - 200, player.y);
+  sniper.removeColliders();
+  sniper.layer = 2;
+  sniper.bulletArray = [];
+  sniper.range = 120;
+  sniper.len = 61;
+  sniper.img = sniperIconImg;
+  sniper.scale = 0.073;
+  sniper.inInventory = false;
+  sniper.bullets = new bullets.Group();
+
+  sniperIcon = new Sprite()
+  sniperIcon.removeColliders();
+  sniperIcon.img = sniperIconImg;
+  sniperIcon.scale = 0.063;
+  sniperIcon.visible = false;
+  sniperIcon.rotate(-35);
+  sniperIcon.offset.x = -1;
+  sniper.icon = sniperIcon;
+  
+  sniper.isEquipped = function()   {
+    this.img = sniperImg;
+    this.layer = 6;
+    this.offset.x = 39;
+    this.scale = 0.45;
+    this.x = this.owner.x;
+    this.y = this.owner.y;
+    this.rotateTowards(mouse, 1.2, 1);
+    // this.equipped = true;
+    this.inInventory = true;
+  }
+
+  sniper.shoot = function() {
+
+    let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
+    let gunPosTemp = createVector(this.x, this.y);
+    let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+
+    // let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+    let bullet = new this.bullets.Sprite(bulletPos.x, bulletPos.y);
+    
+    bullet.life = this.range;
+    bullet.diameter = 6;
+    bullet.color = "black";
+    bullet.direction = this.rotation;
+    bullet.speed = random(10, 12);
+    bullet.collider = "d";
+    bullet.layer = 1;
+    bullet.mass = 3;
+    // console.log(bullet.life)
+    // this.bulletArray.push(bullet);
+  }
+  sniper.updateWhileEquipped = function() {
+    this.x = this.owner.x;
+    this.y = this.owner.y;
+    if(this.owner === player) {
+      this.rotateTowards(mouse, 1.2, 1)
+    }
+  }
+  
+  sniper.isUnequipped = function() {
+    this.inInventory = false;
+    this.layer = 2;
+    this.rotationSpeed = 0;
+    this.img = sniperIconImg;
+    this.scale = 0.08;
+    this.offset.x = 0;
+    this.icon.visible = false;
+  }
+
+
+
 }
+
+
+
+
+
+
 
 function updateGui() {
   box1.x = player.x + 230;
@@ -775,6 +941,12 @@ function updateGuns() {
     }
   }
 
+  let ammoInVicinity = ammos.some(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
+  if(kb.presses("f") && ammoInVicinity){
+    let ammo = ammos.find(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
+    ammo.isPicked();
+  }
+
   let gunInVicinity = guns.some(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
   if(kb.presses("e")){
     if(gunInVicinity){
@@ -804,31 +976,153 @@ function updateGuns() {
   }
 }
 
+let sideLength = 45/2;
+function drawGrid() {
+  // if(mouse.presses()){
+  //   if(mouseX >= 0 && mouseX <= 4400 && mouseY >= 0 && mouseY <= 4400) {
+  //     let xPos = round((mouseX+camera.x - width/2) / 22);
+  //     let yPos = round((mouseY+camera.y - height/2) / 22);
+  //     if(grid[yPos][xPos] === 1){
+  //       grid[yPos][xPos] = 0;
+  //     }
 
-// function trackPlayer() {
-//   // enemy.moveTo(player, 1);
-//   for(let entity of enemies) {
-//     for (let enemy of entities) {
-//       for(let thing of naturalResources) {
-//         if (dist(entity.x, entity.y, thing.x, thing.y) < 100) {
-//           console.log("shoot")
-//           entity.moveAway(thing.x, thing.y, 0.01);
-//         }
-//       }
-//       if (dist(entity.x, entity.y, enemy.x, enemy.y)) {
-//         entity.attractTo(enemy, 20);
-//         entity.speed = constrain(entity.speed, 0, 6);
-//         break;
-//       }
-//       else{
-//         let xCor = random(entity.x - 500, entity.x + 500);
-//         let yCor = random(entity.y - 500, entity.y + 500);
-//         entity.attractTo(xCor, yCor, 5);
-//       }
+  //     else {
+  //       grid[yPos][xPos] = 1;
+  //     }
+  //   }
+  // }
+  if(mouse.pressing()) {
+    let yVal = round((mouse.y - sideLength/2) / 22);
+    let xVal = round((mouse.x - sideLength/2) / 22);
+    if(grid[yVal] !== undefined) {
+      if(grid[yVal][xVal] === 1) {
+        grid[yVal][xVal] = 0;
+      }
+      else{
+        grid[yVal][xVal] = 1;
+      }
+    }
+  }
+  for(let i = 0; i < grid.length; i++) {
+    for(let j = 0; j < grid[i].length; j++) {
+      if(grid[i][j] === 1) {
+        // let bob = new referenceBoxes.Sprite(j*44/2 + sideLength/2, i*44/2 + sideLength/2, sideLength, sideLength, "n");
+        // bob.layer = 10;
+        rect(j*22 + sideLength/2, i*22 + sideLength/2, sideLength, sideLength);
+      }
+      // text(j*44/2 + sideLength/2, i*44/2 + sideLength/2, "hi")
+    }
+  }
+}
 
-//     }
- 
-//   }
+
+// let i = 0;
+function trackPlayer() {
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let enemy = enemies[i];
+    // console.log(20);
+
+    if(enemy.reached) {
+      if(enemy.path.length > 1) {
+        enemy.startPos = enemy.path[enemy.path.length-1]
+        enemy.path.shift();
+        enemy.nextPoint = enemy.path[0];
+
+      }
+      else{
+        let gridPosX = enemy.startPos.x;
+        let gridPosY = enemy.startPos.y;
+        for(let m = -4; m <= 4; m++) {
+          if(gridPosY + m > grid.length && gridPosY + m ) {
+
+          }
+          for(let n = 0; n <= 8; n++){
+            
+          }
+        }
+
+        let newX = enemy.startPos.x;
+        let newY = enemy.startPos.y;
+        
+        let maxDist = 1;
   
-// }
+        let xRandom = round(random(-maxDist, maxDist));
+        while(newX + xRandom > grid[0].length-1 || newX + xRandom < 0) {
+          xRandom = round(random(-maxDist, maxDist));
+        }
+        let yRandom = round(random(-maxDist, maxDist));
+        while(newY + yRandom > grid.length-1 || newY + yRandom < 0) {
+          yRandom = round(random(-maxDist, maxDist));
+        }
+        
+        newX += xRandom;
+        newY += yRandom;
+        
+        easystar.findPath(enemy.startPos.x, enemy.startPos.y, newX, newY, function (path) {
+          if(path !== null) {
+      
+            enemy.path = path;
+          }
+          
+        });
+      }
+    }
+    
+    if(!enemy.moving) {
+      enemy.moveTo(enemy.nextPoint.x*22 + sideLength/2, enemy.nextPoint.y*22 + sideLength/2, 1.5);
+      enemy.moving = true;
+      enemy.reached = false;
+      // enemy.testArr.push(0);
+      
+    }
+    if(enemy.x === enemy.nextPoint.x*22 + sideLength/2 && enemy.y === enemy.nextPoint.y*22 + sideLength/2) {
+      enemy.reached = true;
+      enemy.moving = false;
+    }
+    easystar.calculate();
+  }
+  // easystar.calculate();
+}
+
+function calculateLocalPath(enemy) {
+  // Determine the position of the enemy in the big grid
+  const bigGridX = Math.floor((enemy.x) / 22);
+  const bigGridY = Math.floor((enemy.y) / 22);
+
+  // Define the size of the local grid (8x8)
+  const localGridSize = 8;
+
+  // Calculate the boundaries of the local grid
+  const localGridStartX = Math.max(0, bigGridX - Math.floor(localGridSize / 2));
+  const localGridStartY = Math.max(0, bigGridY - Math.floor(localGridSize / 2));
+
+  const localGridEndX = Math.min(grid[0].length - 1, localGridStartX + localGridSize - 1);
+  const localGridEndY = Math.min(grid.length - 1, localGridStartY + localGridSize - 1);
+
+  // Create a local 2D grid based on the boundaries
+  const localGrid = [];
+  for (let i = localGridStartY; i <= localGridEndY; i++) {
+    const row = [];
+    for (let j = localGridStartX; j <= localGridEndX; j++) {
+      row.push(grid[i][j]);
+    }
+    localGrid.push(row);
+  }
+
+  easystar.setGrid(localGrid);
+
+  // Perform pathfinding on the local grid
+  easystar.findPath(enemy.startPos.x, enemy.startPos.y, targetX, targetY, function (path) {
+    if (path === null) {
+      // Path not found
+      console.log("Path was not found.");
+    } else {
+      // Path found
+      console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+      enemy.path = path;
+    }
+  });
+
+  easystar.calculate();
+}
 
