@@ -46,7 +46,10 @@ let ball, extraCanvas;
 let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg;
 
 //pathfinding vars
-let easystar, grid, referenceBoxes;
+let grid, referenceBoxes;
+
+//YUKA vars
+let steeringBehavior, wanderBehavior;
 
 function preload() {
   // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
@@ -93,11 +96,7 @@ function setup() {
   bg.height *= 0.5;
 
 
-  //easystar
-  referenceBoxes = new Group();
-  easystar = new EasyStar.js();
-  easystar.setGrid(grid);
-  easystar.setAcceptableTiles([0]);
+
 
   // for(let i = 0; i < grid.length; i++) {
   //   for(let j = 0; j < grid[i].length; j++) {
@@ -146,13 +145,12 @@ function setup() {
 
 
 
-  player.reloadShotgun = function() {
-    // player.reloadTimer.start();
-    if(this.reloadTimer.getRemainingTime() % 100 === 0) {
-      this.shotgunAmmo += 1;
-    }
-    if(expired)
-  }
+  // player.reloadShotgun = function() {
+  //   // player.reloadTimer.start();
+  //   if(this.reloadTimer.getRemainingTime() % 100 === 0) {
+  //     this.shotgunAmmo += 1;
+  //   }
+
 
 
   player.equipGun = function(gun) {
@@ -454,9 +452,7 @@ function setup() {
   shotgun.icon = shotgunIcon;
   // player.autoDraw = false;
 
-  easystar.setIterationsPerCalculation(5);
-  easystar.enableCornerCutting();
-  // easystar.enableSync();
+
 }
 
 function draw() {
@@ -1016,113 +1012,7 @@ function drawGrid() {
 }
 
 
-// let i = 0;
-function trackPlayer() {
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    let enemy = enemies[i];
-    // console.log(20);
 
-    if(enemy.reached) {
-      if(enemy.path.length > 1) {
-        enemy.startPos = enemy.path[enemy.path.length-1]
-        enemy.path.shift();
-        enemy.nextPoint = enemy.path[0];
 
-      }
-      else{
-        let gridPosX = enemy.startPos.x;
-        let gridPosY = enemy.startPos.y;
-        for(let m = -4; m <= 4; m++) {
-          if(gridPosY + m > grid.length && gridPosY + m ) {
 
-          }
-          for(let n = 0; n <= 8; n++){
-            
-          }
-        }
-
-        let newX = enemy.startPos.x;
-        let newY = enemy.startPos.y;
-        
-        let maxDist = 1;
-  
-        let xRandom = round(random(-maxDist, maxDist));
-        while(newX + xRandom > grid[0].length-1 || newX + xRandom < 0) {
-          xRandom = round(random(-maxDist, maxDist));
-        }
-        let yRandom = round(random(-maxDist, maxDist));
-        while(newY + yRandom > grid.length-1 || newY + yRandom < 0) {
-          yRandom = round(random(-maxDist, maxDist));
-        }
-        
-        newX += xRandom;
-        newY += yRandom;
-        
-        easystar.findPath(enemy.startPos.x, enemy.startPos.y, newX, newY, function (path) {
-          if(path !== null) {
-      
-            enemy.path = path;
-          }
-          
-        });
-      }
-    }
-    
-    if(!enemy.moving) {
-      enemy.moveTo(enemy.nextPoint.x*22 + sideLength/2, enemy.nextPoint.y*22 + sideLength/2, 1.5);
-      enemy.moving = true;
-      enemy.reached = false;
-      // enemy.testArr.push(0);
-      
-    }
-    if(enemy.x === enemy.nextPoint.x*22 + sideLength/2 && enemy.y === enemy.nextPoint.y*22 + sideLength/2) {
-      enemy.reached = true;
-      enemy.moving = false;
-    }
-    easystar.calculate();
-  }
-  // easystar.calculate();
-}
-
-function calculateLocalPath(enemy) {
-  // Determine the position of the enemy in the big grid
-  const bigGridX = Math.floor((enemy.x) / 22);
-  const bigGridY = Math.floor((enemy.y) / 22);
-
-  // Define the size of the local grid (8x8)
-  const localGridSize = 8;
-
-  // Calculate the boundaries of the local grid
-  const localGridStartX = Math.max(0, bigGridX - Math.floor(localGridSize / 2));
-  const localGridStartY = Math.max(0, bigGridY - Math.floor(localGridSize / 2));
-
-  const localGridEndX = Math.min(grid[0].length - 1, localGridStartX + localGridSize - 1);
-  const localGridEndY = Math.min(grid.length - 1, localGridStartY + localGridSize - 1);
-
-  // Create a local 2D grid based on the boundaries
-  const localGrid = [];
-  for (let i = localGridStartY; i <= localGridEndY; i++) {
-    const row = [];
-    for (let j = localGridStartX; j <= localGridEndX; j++) {
-      row.push(grid[i][j]);
-    }
-    localGrid.push(row);
-  }
-
-  easystar.setGrid(localGrid);
-
-  // Perform pathfinding on the local grid
-  easystar.findPath(enemy.startPos.x, enemy.startPos.y, targetX, targetY, function (path) {
-    if (path === null) {
-      // Path not found
-      console.log("Path was not found.");
-    } else {
-      // Path found
-      console.log("Path was found. The first Point is " + path[0].x + " " + path[0].y);
-      enemy.path = path;
-    }
-  });
-
-  easystar.calculate();
-}
 
