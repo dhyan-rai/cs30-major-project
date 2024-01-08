@@ -863,7 +863,7 @@ function initGuns() {
     this.scale = 0.08;
     this.offset.x = 0;
     this.icon.visible = false;
-  }
+  };
 
 
 
@@ -876,14 +876,18 @@ function initGuns() {
 
 
 function updateGui() {
-  box1.x = player.x + 230;
-  box1.y = player.y + 160;
+  // box1.x = player.x + 290;
+  box1.x = box2.x - 80;
+  box1.y = player.y + height/2 - 170;
 
-  box2.x = player.x + 310;
-  box2.y = player.y + 160;
+  // box2.x = player.x + 370;
+  box2.x = box3.x - 80;
+  box2.y = player.y + height/2 - 170;
 
-  box3.x = player.x + 390;
-  box3.y = player.y + 160;
+  // box3.x = player.x + 450;
+  // box3.y = player.y + 210;
+  box3.x = player.x + width/2 - 310;
+  box3.y = player.y + height/2 - 170;
 
   if(player.activeSlot === player.slot1) {
     selectionBox.x = box1.x;
@@ -947,13 +951,13 @@ function updateGuns() {
   if(kb.presses("e")){
     if(gunInVicinity){
       let gun = guns.find(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
-        if ( player.inventoryIsFull === false) {
-          player.equipGun(gun);
-        }
-        else {
-          player.unEquipGun();
-          player.equipGun(gun);
-        }
+      if ( player.inventoryIsFull === false) {
+        player.equipGun(gun);
+      }
+      else {
+        player.unEquipGun();
+        player.equipGun(gun);
+      }
     }
     else if(player.activeSlot.full){
       player.unEquipGun();
