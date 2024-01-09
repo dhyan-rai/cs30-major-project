@@ -64,9 +64,9 @@ function preload() {
 
 
   //textures
-  bg = loadImage("assets/test-maps/base-layer-1.png")
+  bg = loadImage("assets/test-maps/base-layer-1.png");
   wallImg = loadImage("assets/wall.png");
-  taigaTreeImg = loadImage("assets/tile-images/taiga_tree.png")
+  taigaTreeImg = loadImage("assets/tile-images/taiga_tree.png");
   bigRockImg = loadImage("assets/tile-images/big-rock.png");
   yellowTreeImg = loadImage("assets/tile-images/yellow-tree.png");
   flowerBasketImg = loadImage("assets/tile-images/flower-basket.png");
@@ -86,7 +86,7 @@ function preload() {
 
 function setup() {
 
-  rectMode(CENTER)
+  rectMode(CENTER);
   angleMode(DEGREES);
 
 
@@ -133,31 +133,39 @@ function setup() {
   player.health = 20;
   player.inventoryIsFull = false;
   player.invSlot = 1;
-  player.slot1 = {full: false};
-  player.slot2 = {full: false};
-  player.slot3 = {full: false};
+  player.slot1 = {isFull: false};
+  player.slot2 = {isFull: false};
+  player.slot3 = {isFull: false};
   player.inventory = [player.slot1, player.slot2, player.slot3];
   player.activeSlot = player.slot1;
-  player.shotgunAmmo = 10;
-  player.sniperAmmo = 10;
-  player.pistolAmmo = 10;
+  
+  class Ammo{
+    constructor(type, ammoLeft) {
+      this.type = type;
+      this.ammoLeft = ammoLeft;
+    }
+  }
+  
+  player.ammo = [new Ammo("shotgun", 0), new Ammo("sniper", 0), new Ammo("pistol", 0)];
+  
   player.reloadTimer = new Timer(4000);
 
 
 
-  // player.reloadShotgun = function() {
-  //   // player.reloadTimer.start();
-  //   if(this.reloadTimer.getRemainingTime() % 100 === 0) {
-  //     this.shotgunAmmo += 1;
-  //   }
+  player.reload = function() {
+    if(this.activeSlot.isFull) {
+      this.activeSlot.gun.reload();
+    }
+  };
+
 
 
 
   player.equipGun = function(gun) {
-    if(this.activeSlot.full === true) {
+    if(this.activeSlot.isFull === true) {
       // this.stashGun(this.activeSlot.gun);
       for (let slot of this.inventory) {
-        if (slot.full === false) {
+        if (slot.isFull === false) {
           player.activeSlot = slot;
           break;
         }
@@ -166,19 +174,19 @@ function setup() {
 
     gun.owner = this;
     this.activeSlot.gun = gun;
-    this.activeSlot.full = true;
+    this.activeSlot.isFull = true;
     gun.isEquipped();
 
     // this.inventory.push(gun);
     // this.currentGun = gun;
-  }
+  };
 
   player.unEquipGun = function() {
-    player.activeSlot.gun.isUnequipped()
-    player.activeSlot.full = false;
+    player.activeSlot.gun.isUnequipped();
+    player.activeSlot.isFull = false;
     delete player.activeSlot.gun;
     // console.log("whta")
-  }
+  };
   // player.debug = true;
   // player.img = "assets/ball-img.png";
   
@@ -226,7 +234,7 @@ function setup() {
       player.reloadTimer.start();
       player.reloading = true;
       this.remove();
-    }
+    };
   }
 
   //gui
@@ -261,7 +269,7 @@ function setup() {
 
 
   //rock tiles
-  bigRocks = new naturalResources.Group()
+  bigRocks = new naturalResources.Group();
   bigRocks.img = bigRockImg;
   bigRocks.tile = "b";
 
@@ -271,7 +279,7 @@ function setup() {
   
 
   //random resources
-  flowerBaskets = new naturalResources.Group()
+  flowerBaskets = new naturalResources.Group();
   flowerBaskets.img = flowerBasketImg;
   flowerBaskets.tile = "f";
 
@@ -406,20 +414,20 @@ function setup() {
     0,
     35,
     35
-    );
+  );
     
   for(let tree of taigaTrees) {
     tree.removeColliders();
     tree.addCollider(0, -20, 100, 140);
-    tree.addCollider(0, 85, 40, 60)
+    tree.addCollider(0, 85, 40, 60);
     tree.layer = 0;
     tree.scale *= 0.45;
   }
   for(let rock of bigRocks) {
     rock.removeColliders();
-    rock.addCollider(-5, -90, 115, 100)
+    rock.addCollider(-5, -90, 115, 100);
     rock.addCollider(76, 5, 50, 135);
-    rock.addCollider(-80, 18, 40, 130)
+    rock.addCollider(-80, 18, 40, 130);
     rock.addCollider(-7, 70, 110, 80);
     rock.layer = 0;
     rock.scale *= 0.3;
@@ -463,8 +471,8 @@ function draw() {
   noStroke();
   camera.on();
   
-  camera.x = (player.x);
-  camera.y = (player.y);
+  camera.x = player.x;
+  camera.y = player.y;
   updateGui();
   image(bg, 0, 0);
   // player.draw();
@@ -637,6 +645,7 @@ function initGuns() {
   shotgun.inInventory = false;
   // shotgun.timer = new Timer(5000);
   shotgun.bullets = new bullets.Group();
+  shotgun.ammo = 10;
 
   // shotgun.timer.endTimer();
 
@@ -664,17 +673,17 @@ function initGuns() {
     // this.equipped = true;
     this.inInventory = true;
     // console.log("hi")
-  }
+  };
 
   shotgun.updateWhileEquipped = function() {
     this.x = this.owner.x;
     this.y = this.owner.y;
     if(this.owner === player) {
-      this.rotateTowards(mouse, 1.2, 1)
+      this.rotateTowards(mouse, 1.2, 1);
     }
-  }
+  };
   shotgun.shoot = function() {
-    if((this.timer === undefined || this.timer.expired())){
+    if(this.timer === undefined || this.timer.expired()){
       if(this.timer === undefined) {
         this.timer = new Timer(500);
       }
@@ -700,12 +709,12 @@ function initGuns() {
         bullet.bounciness = 0.8;
         bullet.update = () => {
           bullet.scale *= 0.99;
-        }
+        };
         // this.bulletArray.push(bullet);
       }
       shotgun.timer.start();
     }
-  }
+  };
 
   shotgun.isUnequipped = function() {
     // this.img = shotgunIconImg;
@@ -720,7 +729,9 @@ function initGuns() {
     this.offset.x = -5;
     this.offset.y = 5;
     // this.timer = undefined;
-  }
+  };
+
+
 
   //pistol
   pistol = new guns.Sprite(player.x - 100, player.y);
@@ -735,7 +746,7 @@ function initGuns() {
   pistol.inInventory = false;
   pistol.bullets = new bullets.Group();
 
-  pistolIcon = new Sprite()
+  pistolIcon = new Sprite();
   pistolIcon.removeColliders();
   pistolIcon.img = pistolIconImg;
   pistolIcon.scale = 0.18;
@@ -754,7 +765,7 @@ function initGuns() {
     this.rotateTowards(mouse, 1.2, 1);
     // this.equipped = true;
     this.inInventory = true;
-  }
+  };
 
   pistol.shoot = function() {
     let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
@@ -774,14 +785,14 @@ function initGuns() {
     bullet.mass = 3;
     // console.log(bullet.life)
     // this.bulletArray.push(bullet);
-  }
+  };
   pistol.updateWhileEquipped = function() {
     this.x = this.owner.x;
     this.y = this.owner.y;
     if(this.owner === player) {
-      this.rotateTowards(mouse, 1.2, 1)
+      this.rotateTowards(mouse, 1.2, 1);
     }
-  }
+  };
   
   pistol.isUnequipped = function() {
     this.inInventory = false;
@@ -791,7 +802,7 @@ function initGuns() {
     this.scale = 0.1;
     this.offset.x = 0;
     this.icon.visible = false;
-  }
+  };
 
 
   //pistol
@@ -806,7 +817,7 @@ function initGuns() {
   sniper.inInventory = false;
   sniper.bullets = new bullets.Group();
 
-  sniperIcon = new Sprite()
+  sniperIcon = new Sprite();
   sniperIcon.removeColliders();
   sniperIcon.img = sniperIconImg;
   sniperIcon.scale = 0.063;
@@ -825,7 +836,7 @@ function initGuns() {
     this.rotateTowards(mouse, 1.2, 1);
     // this.equipped = true;
     this.inInventory = true;
-  }
+  };
 
   sniper.shoot = function() {
 
@@ -846,14 +857,14 @@ function initGuns() {
     bullet.mass = 3;
     // console.log(bullet.life)
     // this.bulletArray.push(bullet);
-  }
+  };
   sniper.updateWhileEquipped = function() {
     this.x = this.owner.x;
     this.y = this.owner.y;
     if(this.owner === player) {
-      this.rotateTowards(mouse, 1.2, 1)
+      this.rotateTowards(mouse, 1.2, 1);
     }
-  }
+  };
   
   sniper.isUnequipped = function() {
     this.inInventory = false;
@@ -902,17 +913,17 @@ function updateGui() {
     selectionBox.y = box3.y;
   }
 
-  if(player.slot1.full === true) {
+  if(player.slot1.isFull === true) {
     player.slot1.gun.icon.x = box1.x;
     player.slot1.gun.icon.y = box1.y;
     player.slot1.gun.icon.visible = true;
   }
-  if(player.slot2.full === true) {
+  if(player.slot2.isFull === true) {
     player.slot2.gun.icon.x = box2.x;
     player.slot2.gun.icon.y = box2.y;
     player.slot2.gun.icon.visible = true;
   }
-  if(player.slot3.full === true) {
+  if(player.slot3.isFull === true) {
     player.slot3.gun.icon.x = box3.x;
     player.slot3.gun.icon.y = box3.y;
     player.slot3.gun.icon.visible = true;
@@ -921,7 +932,7 @@ function updateGui() {
 
 function updateInventory() {
   for(let slot of player.inventory) {
-    if (slot.full === false) {
+    if (slot.isFull === false) {
       player.inventoryIsFull = false;
       break;
     }
@@ -934,7 +945,7 @@ function updateInventory() {
 function updateGuns() {
   
   for (let slot of player.inventory) {
-    if (slot.full === true && slot !== player.activeSlot) {
+    if (slot.isFull === true && slot !== player.activeSlot) {
       slot.gun.visible = false;
       slot.gun.x = slot.gun.owner.x;
       slot.gun.y = slot.gun.owner.y;
@@ -959,7 +970,7 @@ function updateGuns() {
         player.equipGun(gun);
       }
     }
-    else if(player.activeSlot.full){
+    else if(player.activeSlot.isFull){
       player.unEquipGun();
     }
     
@@ -967,7 +978,7 @@ function updateGuns() {
 
                  
 
-  if (player.activeSlot.full === true) {
+  if (player.activeSlot.isFull === true) {
     player.activeSlot.gun.visible = true;
     player.activeSlot.gun.updateWhileEquipped();
     if(mouse.presses()) {
