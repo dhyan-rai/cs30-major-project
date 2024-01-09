@@ -13,18 +13,19 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   rectMode(CENTER);
   thing = new YUKA.Vehicle();
-  thing.boundingRadius = 10;
+  thing.position.x = width/2;
+  thing.position.z = 0;
+
+
+  thing.boundingRadius = 4;
   obstacle = new YUKA.GameEntity();
+
   obstacle.position.x = 300;
   obstacle.position.z = 140;
-  obstacle.boundingRadius = 10;
+  obstacle.boundingRadius = 8;
   // obstacle.rot
   
   // obstacle.scale = 100;
-  navMesh = new YUKA.NavMesh();
-  poly = new YUKA.Polygon();
-  poly.fromContour([new YUKA.Vector3(0, 0, 0), new YUKA.Vector3(10, 0, 0), new YUKA.Vector3(10, 0, 10), new YUKA.Vector3(0, 0, 10), new YUKA.Vector3(0, 0, 0)])
-  poly.centroid = new YUKA.Vector3(width/2, 0, height/2);
 
   
   thingToCatch = new YUKA.MovingEntity();
@@ -33,15 +34,20 @@ function setup() {
   pursueBehavior = new YUKA.PursuitBehavior(thingToCatch);
   avoidBehavior = new YUKA.ObstacleAvoidanceBehavior([obstacle]);
   wanderBehavior = new YUKA.WanderBehavior();
+  wanderBehavior.jitter = 1;
+  wanderBehavior.radius = 0.1;
   // avoidBehavior.brakingWeight = 0.5;
-  // avoidBehavior.dBoxMinLength = 50;
+  avoidBehavior.dBoxMinLength = 10;
+  // avoidBehavior.brakingWeight = 0;
   
-  avoidBehavior.weight = 10;
+  avoidBehavior.weight = 1;
+  wanderBehavior.weight = 1;
   arriveBehavior = new YUKA.ArriveBehavior(new YUKA.Vector3(width/2, 0, height/2));
   // thing.steering.behaviors.push(arriveBehavior);
   thing.steering.behaviors.push(avoidBehavior);
   thing.steering.behaviors.push(pursueBehavior);
-  thing.smoother = new YUKA.Smoother(30);
+  // thing.steering.behaviors.push(wanderBehavior);
+  thing.smoother = new YUKA.Smoother(20);
 }
 
 function draw(){
@@ -51,11 +57,11 @@ function draw(){
   thingToCatch.position.x = mouseX;
   thingToCatch.position.z = mouseY;
   thingToCatch.position.y = 0;
-  circle(thing.position.x, thing.position.z, 30);
-  circle(obstacle.position.x, obstacle.position.z, avoidBehavior.dBoxMinLength);
-  noFill();
+  circle(thing.position.x, thing.position.z, thing.boundingRadius);
   circle(obstacle.position.x, obstacle.position.z, obstacle.boundingRadius);
-  
+  noFill();
+  // circle(obstacle.position.x, obstacle.position.z, obstacle.boundingRadius);
+  console.log(avoidBehavior.dBoxMinLength + ( thing.getSpeed() / thing.maxSpeed ) * avoidBehavior.dBoxMinLength)
   fill("white");
   circle(width/2, height/2, 10)
 }

@@ -1,42 +1,77 @@
-let vehicle, ahead, ahead2;
+let vehicle, ahead, ahead2, target;
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-  vehicle = new Sprite(width/2, height/2, 50);
-  vehicle.vel.x = random(-3, 3);
-  vehicle.vel.y = random(-3, 3);
+	createCanvas(windowWidth, windowHeight);
+
+	target = new Sprite();
+	
+	let targetSpdRange = 5;
+	target.vel.set(random(-targetSpdRange, targetSpdRange), random(-targetSpdRange, targetSpdRange));
+
+	initVehicle();
 }
 
 function draw() {
-  background(220);
-  // ahead = p5.Vector.setMag(p5.Vector.add(createVector(vehicle.position.x, vehicle.position.y), createVector(vehicle.velocity.x, vehicle.velocity.y)));
+	background(220);
+	let steering = vehicle.arrive(createVector(mouse.x, mouse.y))
+	// let steering = vehicle.pursue(target);
+	vehicle.applySteeringForce(steering);
+	vehicle.updateMovement();
 }
 
-function collisionAvoidance() {
-	ahead = ...; // calculate the ahead vector 
-	ahead2 = ...; // calculate the ahead2 vector 
-	var mostThreatening = findMostThreateningObstacle();
-	var avoidance = new Vector3D(0, 0, 0);
-	if (mostThreatening !== null) {
-		avoidance.x = ahead.x - mostThreatening.center.x;
-		avoidance.y = ahead.y - mostThreatening.center.y;
-		avoidance.normalize();
-		avoidance.scaleBy(MAX_AVOID_FORCE);
-	} else {
-		avoidance.scaleBy(0); // nullify the avoidance force 
-	}
-	return avoidance;
-}
+function initVehicle() {
+	//properties
+	vehicle = new Sprite();
+	vehicle.acc = createVector(0, 0);
+	vehicle.vel = createVector(0, 0);
+	vehicle.maxSpeed = 4.5;
+	vehicle.maxForce = 0.1;
+	vehicle.r = 16;
 
-function findMostThreateningObstacle() {
-	var mostThreatening = null;
-	for (var i = 0; i < Game.instance.obstacles.length; i++) {
-		var obstacle = Game.instance.obstacles[i];
-		var collision = lineIntersecsCircle(ahead, ahead2, obstacle);
-		// "position" is the character's current position 
-		if (collision && (mostThreatening === null || distance(position, obstacle) < distance(position, mostThreatening))) {
-			mostThreatening = obstacle;
+	//methods
+	vehicle.seek = function(target, arrival = false) {
+		let force = p5.Vector.sub(target, this.position);
+		let desiredSpeed = this.maxSpeed;
+		if(arrival){
+			let slowRadius = 100;
+			let distance = force.mag();
+			if(distance < slowRadius) {
+				desiredSpeed = map(distance, 0, slowRadius, 0, this.maxSpeed);
+			}
 		}
+		force.setMag(desiredSpeed);
+		force.sub(this.vel);
+		force.limit(this.maxForce);
+		// this.applySteeringForce(force);
+		return force;
 	}
-	return mostThreatening;
+
+	vehicle.arrive = function(target) {
+		return this.seek(target, true);
+	}
+
+	vehicle.flee = function(target) {
+		return this.seek(target).mult(-1);
+	}
+
+	vehicle.pursue = function(targetVehicle) {
+		let target = targetVehicle.position.copy();
+		let prediction = targetVehicle.vel.copy();
+		prediction.mult(10);
+		target.add(prediction);
+		return this.seek(target);
+	}
+
+	vehicle.evade = function(targetVehicle) {
+		return this.pursue(targetVehicle).mult(-1);
+	}
+
+	vehicle.applySteeringForce = function(force) {
+		this.acc.add(force)
+	}
+
+	vehicle.updateMovement = function() {
+		this.vel.add(this.acc);
+		this.acc.set(0, 0);
+	}
 }
