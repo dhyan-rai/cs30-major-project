@@ -1,23 +1,35 @@
-let vehicle, ahead, ahead2, target;
+let vehicle, dBox;
+// let dBoxLength;
+let dBoxMinLength = 50;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  target = new Sprite();
+  vehicle = new Sprite(width/2, height/2, 50);
+  
+  dBox = new Sprite(vehicle.x, vehicle.y - vehicle.r, vehicle.r, dBoxMinLength);
 
-  let targetSpdRange = 5;
-  target.vel.set(random(-targetSpdRange, targetSpdRange), random(-targetSpdRange, targetSpdRange));
-
-  initVehicle();
+  // dBox.removeColliders();
+  dBox.collider = "n";
+  // dBox.layer = 10;
+  // dBox.w = vehicle.r - 10;
+  // dBox.h = dBoxMinLength;
+  dBox.debug =  true;
+  // let j = new GlueJoint(dBox, vehicle);
+  
 }
 
 function draw() {
   background(220);
-  let steering = vehicle.arrive(createVector(mouse.x, mouse.y));
-  // let steering = vehicle.pursue(target);
-  vehicle.applySteeringForce(steering);
-  vehicle.updateMovement();
+  vehicle.moveTowards(mouse.x, mouse.y);
+  dBox.position.x = vehicle.x;
+  dBox.position.y = vehicle.y - vehicle.r;
+  dBox.direction = vehicle.rotation;
+  vehicle.rotation += 10;
 }
+
+
+
 
 function initVehicle() {
   //properties
