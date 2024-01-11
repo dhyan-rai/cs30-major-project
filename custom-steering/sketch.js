@@ -3,6 +3,8 @@ let maxSpeed = 5.5;
 // let dBoxLength;
 let dBoxMinLength = 50;
 let obstacle;
+let maxForce = 5;
+let aheadVect;
 
 
 function setup() {
@@ -24,7 +26,6 @@ function setup() {
   // dBox.h = dBoxMinLength;
   // dBox.debug =  true;
   // let j = new GlueJoint(dBox, vehicle);
-  allSprites.autoDraw = false;
 }
 
 function draw() {
@@ -38,15 +39,13 @@ function draw() {
   // dBox.h = map(vehicle.speed, 0, maxSpeed, dBoxMinLength, 100);
   let len = 20;
   let tempVect = p5.Vector.fromAngle(radians(vehicle.rotation), len);
+  
   dBox.position = p5.Vector.add(vehicle.position, tempVect);
 
-  let tempVect1 = p5.Vector.fromAngle(radians(vehicle.rotation), len-10);
-  let tempVect2 = p5.Vector.fromAngle(-PI/2, dBox.width/2);
-  allSprites.draw();
-  let tempVect3 = p5.Vector.add(tempVect1, tempVect2);
-  circlePos = p5.Vector.add(vehicle.position, tempVect3);
+  
+  aheadVect = p5.Vector.add(p5.Vector.fromAngle(radians(vehicle.rotation), len+dBox.h), vehicle.position);
+  
 
-  circle(circlePos.x, circlePos.y, 10);
   // rect(circlePos.x, circlePos.y, dBox.w, dBox.h);
 
   dBox.rotation = vehicle.rotation + 90;
@@ -55,12 +54,18 @@ function draw() {
 
   if(dBox.overlapping(obstacle)) {
     vehicle.color = "red";
+    let avoidanceForce = p5.Vector.sub(aheadVect - obstacle);
+    avoidanceForce.setMag(maxForce);
+    vehicle.add(avoidanceForce);
   }
   else {
     vehicle.color = "black";
   }
 
   if(keyIsDown(65)) {
+    vehicle.rotation += 2;
+  }
+  if(keyIsDown(68)) {
     vehicle.rotation += 2;
   }
 }
