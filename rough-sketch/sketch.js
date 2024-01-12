@@ -146,7 +146,7 @@ function setup() {
     }
   }
   
-  player.ammo = [new Ammo("shotgun", 0), new Ammo("sniper", 0), new Ammo("pistol", 0)];
+  player.ammos = [new Ammo("shotgun", 0), new Ammo("sniper", 0), new Ammo("pistol", 0)];
   
   player.reloadTimer = new Timer(4000);
 
@@ -227,12 +227,16 @@ function setup() {
   ammos = new Group();
   shotgunAmmos = new ammos.Group();
   for(let i = 0; i < 1; i++) {
-    let shotgunAmmo = new shotgunAmmos.Sprite();
+    let shotgunAmmo = new shotgunAmmos.Sprite(player.x, player.y);
     shotgunAmmo.removeColliders();
+    shotgunAmmo.debug = true;
+    shotgunAmmo.type = "shotgun";
     shotgunAmmo.isPicked = function() {
-      player.reloadShotgun();
-      player.reloadTimer.start();
-      player.reloading = true;
+      // player.reloadShotgun();
+      // player.reloadTimer.start();
+      // player.reloading = true;
+      let thisGun = player.ammos.find((ammoType) => ammoType.type === "shotgun");
+      thisGun.ammoLeft += 10;
       this.remove();
     };
   }
@@ -244,14 +248,7 @@ function setup() {
   initGuns();
 
 
-  for (let gun of guns) {
-    gun.bulletArray = [];
-    // gun.offset.x = 25;
-    gun.bounciness = 0;
-    gun.friction = 0;
-    gun.drag = 0;
-    gun.rotationDrag = 0;
-  }
+
 
   //tilemap
   naturalResources = new Group();
@@ -474,7 +471,7 @@ function draw() {
   camera.x = player.x;
   camera.y = player.y;
   updateGui();
-  image(bg, 0, 0);
+  image(bg, 0 - player.vel.x, 0 - player.vel.y);
   // player.draw();
   updatePlayerMovement();
   // camera.moveTo(player, 1.5);
@@ -599,6 +596,16 @@ function keyTyped() {
   if(key === "p") {
     camera.zoom -= 0.2;
   }
+  if(key === "r") {
+    if(player.activeSlot.isFull) {
+      let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
+      if(currentAmmo.ammoLeft > 0) {
+        currentAmmo.ammoLeft -= 10;
+        player.activeSlot.gun.ammo = 10;
+        console.log("locked and loaded sir");
+      }
+    }
+  }
 }
 
 function initGui() {
@@ -683,10 +690,7 @@ function initGuns() {
     }
   };
   shotgun.shoot = function() {
-    if(this.timer === undefined || this.timer.expired()){
-      if(this.timer === undefined) {
-        this.timer = new Timer(500);
-      }
+    if(shotgun.ammo > 0) {
       for (let i = 0; i <= 10; i++) {
         
         //position from an angle
@@ -697,22 +701,28 @@ function initGuns() {
   
         let bullet = new this.bullets.Sprite(bulletPos.x, bulletPos.y);
   
-        bullet.diameter = 5;
-        bullet.color = "white";
-        bullet.direction = this.rotation + random(-10,10);
-        bullet.speed = random(13, 15);
+        // bullet.diameter = 5;
+        bullet.w = 5;
+        bullet.h = 3;
+        // bullet.offset.y = 2.5;
+        bullet.color = "orange";
+        bullet.direction = this.rotation + random(-20,20);
+        bullet.speed = random(10, 13);
         bullet.collider = "d";
         bullet.layer = 1;
         bullet.bounce = 0.8;
         bullet.life = this.range + random(-5, 5);
         bullet.mass = 3;  
-        bullet.bounciness = 0.8;
+        bullet.bounciness = 1;
         bullet.update = () => {
+          bullet.w = map(bullet.speed, 0, bullet.speed, 5, 6);
           bullet.scale *= 0.99;
+          bullet.rotation = bullet.direction;
         };
+        bullet.overlaps(bullets);
         // this.bulletArray.push(bullet);
       }
-      shotgun.timer.start();
+      shotgun.ammo -= 1;
     }
   };
 
@@ -876,7 +886,15 @@ function initGuns() {
     this.icon.visible = false;
   };
 
-
+  //for all the guns
+  for (let gun of guns) {
+    gun.bulletArray = [];
+    // gun.offset.x = 25;
+    gun.bounciness = 0;
+    gun.friction = 0;
+    gun.drag = 0;
+    gun.rotationDrag = 0;
+  }
 
 }
 
@@ -890,15 +908,21 @@ function updateGui() {
   // box1.x = player.x + 290;
   box1.x = box2.x - 80;
   box1.y = player.y + height/2 - 170;
+  box1.x += player.vel.x + 3;
+  box1.y += player.vel.y + 3;
 
   // box2.x = player.x + 370;
   box2.x = box3.x - 80;
   box2.y = player.y + height/2 - 170;
+  box2.x += player.vel.x + 3;
+  box2.y += player.vel.y + 3;
 
   // box3.x = player.x + 450;
   // box3.y = player.y + 210;
   box3.x = player.x + width/2 - 310;
   box3.y = player.y + height/2 - 170;
+  box3.x += player.vel.x + 3;
+  box3.y += player.vel.y + 3;
 
   if(player.activeSlot === player.slot1) {
     selectionBox.x = box1.x;
@@ -1025,8 +1049,6 @@ function drawGrid() {
     }
   }
 }
-
-
 
 
 
