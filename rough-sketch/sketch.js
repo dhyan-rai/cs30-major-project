@@ -147,6 +147,8 @@ function setup() {
   player.inventory = [player.slot1, player.slot2, player.slot3];
   player.activeSlot = player.slot1;
   player.reloading = false;
+  player.gameEntity = new YUKA.GameEntity();
+  player.boundingRadius = 80;
 
   class Ammo{
     constructor(type, ammoLeft) {
@@ -608,6 +610,8 @@ function updatePlayerMovement() {
     spd = 0;  
   }
 
+  player.gameEntity.position.x = player.x;
+  player.gameEntity.position.z = player.y;
 }
 
 function updateBullets(gun) {
@@ -1203,12 +1207,21 @@ function updateEnemyGuns() {
     enemy.gun.y = enemy.y;
     if(dist(enemy.x, enemy.y, player.x, player.y) < 300) {
       enemy.rotateTowards(player);
-      enemy.gun.rotateTowards(enemy.rotation, 1);
+      enemy.gun.rotateTowards(player, 0.1);
     }
     else {
+      
       enemy.rotateTowards(enemy.direction);
       enemy.gun.rotateTowards(enemy.rotation);
     }
+    // let rot;
+    // if(enemy.rotation < 0) {
+    //   rot = 180 - Math.abs(enemy.rotation) + 180;
+    // }
+    // else {
+    //   rot = enemy.rotation;
+    // }
+    // enemy.gun.rotateTowards(enemy.rotation);
     enemy.velocity.x = enemy.vehicle.velocity.x;
     enemy.velocity.y = enemy.vehicle.velocity.z;
     // enemy.rotateTowards(enemy.direction);
@@ -1225,6 +1238,7 @@ function updateEnemyGuns() {
     
   });
 
+  // console.log(enemies[0].rotation);
 }
 
 function createEnemies(num) {
@@ -1238,19 +1252,29 @@ function createEnemies(num) {
     enemy.vehicle.position.x = enemy.x;
     enemy.vehicle.position.z = enemy.y;
     enemy.vehicle.maxSpeed = 2;
+    enemy.vehicle.smoother = new YUKA.Smoother(3);
+    // enemy.vehicle.goal = new YUKA.Goal()
+    
+
+    //pursure behavior
+    let pursueBehavior = new YUKA.PursuitBehavior(player.gameEntity);
 
     //defining wander behavior
     let wanderBehavior = new YUKA.WanderBehavior();
     wanderBehavior.jitter = 1.5;
-    wanderBehavior.radius = 0.5;
+    wanderBehavior.radius = 0.2;
+    // wanderBehavior.weight = 5;
 
     //defining avoidance behavior
     let obstacleAvoidanceBehavior = new YUKA.ObstacleAvoidanceBehavior(obstacles);
     obstacleAvoidanceBehavior.dBoxMinLength = 80;
+    // obstacleAvoidanceBehavior.weight = 1;
+    obstacleAvoidanceBehavior.brakingWeight = 0.8;
 
 
-    enemy.vehicle.steering.behaviors.push(wanderBehavior);
-    enemy.vehicle.steering.behaviors.push(obstacleAvoidanceBehavior);
+    // enemy.vehicle.steering.behaviors.push(wanderBehavior);
+    // enemy.vehicle.steering.behaviors.push(obstacleAvoidanceBehavior);
+    // enemy.vehicle.steering.behaviors.push(pursueBehavior);
     // setInterval(enemy.gun.shoot(), 3000);
     
   }
