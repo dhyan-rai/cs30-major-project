@@ -15,6 +15,8 @@ function setup() {
   thing = new YUKA.Vehicle();
   thing.position.x = width/2;
   thing.position.z = 0;
+  thing.maxSpeed = 1;
+  // thing.maxForce = 0.5;
 
 
   thing.boundingRadius = 4;
@@ -47,13 +49,13 @@ function setup() {
   thing.steering.behaviors.push(avoidBehavior);
   thing.steering.behaviors.push(pursueBehavior);
   // thing.steering.behaviors.push(wanderBehavior);
-  thing.smoother = new YUKA.Smoother(20);
+  thing.smoother = new YUKA.Smoother(2);
 }
 
 function draw(){
   background(220);
   thing.update(1)
-  thingToCatch.update();
+  thingToCatch.update(1);
   thingToCatch.position.x = mouseX;
   thingToCatch.position.z = mouseY;
   thingToCatch.position.y = 0;
@@ -61,7 +63,7 @@ function draw(){
   circle(obstacle.position.x, obstacle.position.z, obstacle.boundingRadius);
   noFill();
   // circle(obstacle.position.x, obstacle.position.z, obstacle.boundingRadius);
-  console.log(avoidBehavior.dBoxMinLength + ( thing.getSpeed() / thing.maxSpeed ) * avoidBehavior.dBoxMinLength)
+  // console.log(avoidBehavior.dBoxMinLength + ( thing.getSpeed() / thing.maxSpeed ) * avoidBehavior.dBoxMinLength)
   fill("white");
   circle(width/2, height/2, 10)
 }
