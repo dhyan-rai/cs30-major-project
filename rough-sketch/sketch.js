@@ -30,7 +30,7 @@ let enemies, player, entities;
 
 //bullets
 let bullets, ammos;
-let shotgunAmmoImg, sniperAmmoImg, pistolAmmoImg;
+// let shotgunAmmoImg, sniperAmmoImg, pistolAmmoImg;
 
 //initializing guns
 let shotgun, pistol, sniper;
@@ -56,7 +56,7 @@ let steeringBehavior, wanderBehavior, obstacleAvoidanceBehavior, pursueBehavior,
 let entityManager;
 
 //ammo groups
-let shotgunAmmos, sniperAmmos, pistolAmmos;
+let shotgunAmmos, sniperAmmos, pistolAmmos, shotgunAmmoImg, pistolAmmoImg, sniperAmmoImg;
 
 //enemy guns
 let enemyGuns;
@@ -64,6 +64,7 @@ let enemyGuns;
 //crates
 let crates, crate, crateSpriteSheet;
 
+//timers
 
 function preload() {
   // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
@@ -96,8 +97,14 @@ function preload() {
   box1Img = loadImage("assets/inventory/inventory-box-blue.png");
   selectionBoxImg = loadImage("assets/inventory/selection-box.png");
 
-  crateBrokenSheet = loadImage("assets/tile-images/crate-broken.png");
-  cratesImg = loadImage("assets/tile-images/crates-clean.png");
+
+  //ammo images
+  shotgunAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-shotgun.png");
+  pistolAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-pistol.png");
+  sniperAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-sniper.png");
+
+  // crateBrokenSheet = loadImage("assets/tile-images/crate-broken.png");
+  crateSpriteSheet = loadImage("assets/tile-images/crates-clean.png");
 
 
   
@@ -173,9 +180,22 @@ function setup() {
   player.reloading = false;
   player.vehicle = new YUKA.MovingEntity();
   player.vehicle.boundingRadius = 80;
-  player.vehicle.name = "player"
+  player.vehicle.name = "player";
   entityManager.add(player.vehicle);
   obstacles.push(player.vehicle);
+
+  //for reloading
+  player.reloading = false;
+  player.reloadGun = function() {
+    if(this.activeSlot.gun.reloadTimer.expired()) {
+      player.reloading = false;
+    }
+    else {
+      player.activeSlot.gun.ammo += 1;
+      let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
+      currentAmmo -= 1;
+    }
+  };
 
   class Ammo{
     constructor(type, ammoLeft) {
@@ -190,11 +210,7 @@ function setup() {
 
 
 
-  player.reload = function() {
-    if(this.activeSlot.isFull) {
-      this.activeSlot.gun.reload();
-    }
-  };
+
 
 
 
@@ -446,7 +462,7 @@ function setup() {
     
   for(let crate of crates) {
     crate.layer = 1;
-    crate.spriteSheet = cratesImg;
+    crate.spriteSheet = crateSpriteSheet;
     crate.anis.offset.x = -2;
     crate.anis.offset.y = -4;
     crate.anis.frameDelay = 8;
@@ -460,7 +476,7 @@ function setup() {
     crate.anis.damaged.scale = 1.7;
     crate.anis.idle.scale = 1.7;
     crate.removeColliders();
-    crate.detector = new Sprite(crate.x, crate.y, 32, 32)
+    crate.detector = new Sprite(crate.x, crate.y, 32, 32);
     // crate.detector.debug = true;
     crate.detector.visible = false;
     crate.detector.collider = "s";
@@ -469,7 +485,7 @@ function setup() {
     crate.damageAniRunning = false;
     crate.health = 5;
     
-    crate.entity = new YUKA.GameEntity()
+    crate.entity = new YUKA.GameEntity();
     crate.entity.position.x = crate.x;
     crate.entity.position.z = crate.y;
     crate.entity.boundingRadius = 50;
@@ -714,7 +730,7 @@ function updateHealth() {
       player.health -= bullet.damage;
       bullet.remove();
     }
-  })
+  });
 }
 
 function keyTyped() {
@@ -728,10 +744,13 @@ function keyTyped() {
     if(player.activeSlot.isFull) {
       let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
       if(currentAmmo && currentAmmo.ammoLeft > 0) {
-        currentAmmo.ammoLeft -= 10;
-        player.activeSlot.gun.ammo = 10;
-        console.log("locked and loaded sir");
-        
+        // currentAmmo.ammoLeft -= 10;
+        // player.activeSlot.gun.ammo = 10;
+        // console.log("locked and loaded sir");
+        if(player.reloading === false){
+          player.activeSlot.gun.reloadTimer.start();
+          player.reloading = true;
+        }
       }
     }
   }
@@ -864,29 +883,31 @@ function updateGuns() {
     }
   }
 
-  let ammoInVicinity = ammos.some(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
-  if(kb.presses("f") && ammoInVicinity && !player.reloading){
-    let ammo = ammos.find(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
-    ammo.isPicked();
-  }
-
-  let gunInVicinity = guns.some(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
-  if(kb.presses("e") && !player.reloading){
-    if(gunInVicinity){
-      let gun = guns.find(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
-      if ( player.inventoryIsFull === false) {
-        player.equipGun(gun);
+  if(!player.reloading) {
+    let ammoInVicinity = ammos.some(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
+    if(kb.presses("f") && ammoInVicinity && !player.reloading){
+      let ammo = ammos.find(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
+      ammo.isPicked();
+    }
+  
+    let gunInVicinity = guns.some(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
+    if(kb.presses("e") && !player.reloading){
+      if(gunInVicinity){
+        let gun = guns.find(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
+        if ( player.inventoryIsFull === false) {
+          player.equipGun(gun);
+        }
+        else {
+          player.unEquipGun();
+          player.equipGun(gun);
+        }
       }
-      else {
+      else if(player.activeSlot.isFull){
         player.unEquipGun();
-        player.equipGun(gun);
       }
-    }
-    else if(player.activeSlot.isFull){
-      player.unEquipGun();
-    }
-    
-  } 
+      
+    } 
+  }
 
                  
 
@@ -900,6 +921,7 @@ function updateGuns() {
 
   if(player.reloading) {
     player.speed *= 0.8;
+    player.reloadGun();
   }
 }
 
@@ -955,7 +977,7 @@ function createGun(gun, x, y) {
     shotgun.bulletArray = [];
     shotgun.inInventory = false;
     shotgun.owner = player;
-    // shotgun.timer = new Timer(5000);
+    shotgun.reloadTimer = new Timer(5000);
     shotgun.bullets = new bullets.Group();
     shotgun.ammo = 10;
     shotgun.damage = 0.5;
@@ -1211,8 +1233,11 @@ function createGun(gun, x, y) {
 function createAmmo(gunType, x, y) {
   if(gunType === "shotgun") {
     let shotgunAmmo = new shotgunAmmos.Sprite(x, y);
+    shotgunAmmo.img = shotgunAmmoImg;
     shotgunAmmo.removeColliders();
-    shotgunAmmo.debug = true;
+    shotgunAmmo.scale = 0.7;
+    shotgunAmmo.rotation = random(360);
+    // shotgunAmmo.debug = true;
     shotgunAmmo.type = "shotgun";
     shotgunAmmo.isPicked = function() {
       let gunAmmo = player.ammos.find((ammoType) => ammoType.type === "shotgun");
@@ -1222,8 +1247,11 @@ function createAmmo(gunType, x, y) {
   }
   else if(gunType === "pistol") {
     let pistolAmmo = new shotgunAmmos.Sprite(x, y);
+    pistolAmmo.img = pistolAmmoImg;
     pistolAmmo.removeColliders();
-    pistolAmmo.debug = true;
+    pistolAmmo.scale = 0.7;
+    pistolAmmo.rotation = random(360);
+    // pistolAmmo.debug = true;
     pistolAmmo.type = "pistol";
     pistolAmmo.isPicked = function() {
       let gunAmmo = player.ammos.find((ammoType) => ammoType.type === "pistol");
@@ -1233,8 +1261,11 @@ function createAmmo(gunType, x, y) {
   }
   else if(gunType === "sniper") {
     let sniperAmmo = new sniperAmmos.Sprite(x, y);
+    sniperAmmo.img = sniperAmmoImg;
     sniperAmmo.removeColliders();
-    sniperAmmo.debug = true;
+    sniperAmmo.scale = 0.7;
+    sniperAmmo.rotation = random(360);
+    // sniperAmmo.debug = true;
     sniperAmmo.type = "sniper";
     sniperAmmo.isPicked = function() {
       let gunAmmo = player.ammos.find((ammoType) => ammoType.type === "sniper");
@@ -1302,8 +1333,8 @@ function createEnemyGun(owner, type) {
           bullet.overlaps(bullets);
         }
         shotgun.timer.start();
-      };
-    }
+      }
+    };
     return shotgun;
   }
   if(type === "pistol") {
@@ -1344,7 +1375,7 @@ function createEnemyGun(owner, type) {
         bullet.overlaps(bullets);
         this.timer.start();
       }
-    }
+    };
     return pistol;
   }
 }
@@ -1384,7 +1415,7 @@ function updateEnemies() {
     let entityInVicinity = entities.some(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
     if(entityInVicinity){
 
-      let targetEntity = entities.find(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy)
+      let targetEntity = entities.find(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
       enemy.gun.shoot();
       if(!enemy.vehicle.steering.behaviors[2].active || enemy.vehicle.steering.behaviors[2].evader !== targetEntity.vehicle) {
         
@@ -1423,7 +1454,7 @@ function updateEnemies() {
         // enemy.vehicle.steering.behaviors[3].active = true;
         enemy.targetEntity = bullet.owner;
       }
-    })
+    });
 
     if(enemy.health <= 0) {
       enemy.isKilled();
@@ -1483,7 +1514,7 @@ function createEnemies(num) {
       enemy.gun.remove();
       entityManager.remove(enemy.vehicle);
       enemy.remove();
-    }
+    };
     entityManager.add(enemy.vehicle);
 
     
@@ -1542,7 +1573,7 @@ function updateCrates() {
 
         //removing the obstacle for each enemy so they can walk through it
         for(let enemy of enemies) {
-          let obsts = enemy.vehicle.steering.behaviors[0].obstacles
+          let obsts = enemy.vehicle.steering.behaviors[0].obstacles;
           obsts.splice(obsts.indexOf(crate.entity), 1);
         }
         
@@ -1561,7 +1592,7 @@ function updateCrates() {
       }
   
       if(crate.damageTaken) {
-        crate.changeAni("damaged")
+        crate.changeAni("damaged");
         crate.damageAniRunning = true;
         crate.damageTaken = false;
       }
@@ -1575,5 +1606,5 @@ function updateCrates() {
         crate.changeAni("idle");
       }
     }
-  })
+  });
 }
