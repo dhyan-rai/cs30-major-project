@@ -5,6 +5,8 @@
 // Extra for Experts:
 // - describe what you did to take this project "above and beyond"
 
+
+
 let bg, bgGround, bgResources;
 // let player;
 // let obstacle1, obstacle2, obstacle3, obstacle4;
@@ -50,14 +52,18 @@ let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, select
 let grid, referenceBoxes;
 
 //YUKA vars
-let steeringBehavior, wanderBehavior, obstacleAvoidanceBehavior, obstacleEntities;
-
+let steeringBehavior, wanderBehavior, obstacleAvoidanceBehavior, pursueBehavior, seekBehavior, obstacleEntities;
+let entityManager;
 
 //ammo groups
 let shotgunAmmos, sniperAmmos, pistolAmmos;
 
 //enemy guns
 let enemyGuns;
+
+//crates
+let crates, crate, crateSpriteSheet;
+
 
 function preload() {
   // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
@@ -68,6 +74,8 @@ function preload() {
   loadJSON("mapdata.json", function(data){
     grid = data.obstacles;
   });
+
+
   
 
 
@@ -88,6 +96,12 @@ function preload() {
   box1Img = loadImage("assets/inventory/inventory-box-blue.png");
   selectionBoxImg = loadImage("assets/inventory/selection-box.png");
 
+  crateBrokenSheet = loadImage("assets/tile-images/crate-broken.png");
+  cratesImg = loadImage("assets/tile-images/crates-clean.png");
+
+
+  
+  // crates.anis.frameDelay = 8;
   // shotgunAmmoImg = loadImage()
 
 }
@@ -104,6 +118,14 @@ function setup() {
   bg.height *= 0.5;
 
 
+
+  crates = new Group();
+  // crates = new Group();
+  crates.w = 64;
+  crates.h = 64;
+  crates.tile = "c";
+  
+  
 
 
   // for(let i = 0; i < grid.length; i++) {
@@ -122,8 +144,10 @@ function setup() {
   //creating player sprite
   
   entities = new Group();
+  //entity manager
+  entityManager = new YUKA.EntityManager();
 
-  player = new entities.Sprite(1500, 1800, 35, "octagon");
+  player = new Sprite(1500, 1800, 35, "octagon");
   // player.w = 85;
   // player.h = 85;
   // player.diameter = 125;
@@ -147,8 +171,11 @@ function setup() {
   player.inventory = [player.slot1, player.slot2, player.slot3];
   player.activeSlot = player.slot1;
   player.reloading = false;
-  player.gameEntity = new YUKA.GameEntity();
-  player.boundingRadius = 80;
+  player.vehicle = new YUKA.MovingEntity();
+  player.vehicle.boundingRadius = 80;
+  player.vehicle.name = "player"
+  entityManager.add(player.vehicle);
+  obstacles.push(player.vehicle);
 
   class Ammo{
     constructor(type, ammoLeft) {
@@ -249,7 +276,7 @@ function setup() {
   initGui();
 
   //guns creation
-  initGuns();
+  // initGuns();
 
 
 
@@ -288,10 +315,10 @@ function setup() {
   tileMap = new Tiles(
     [
       "...............................................................................................................................",
+      ".....c..................................t......................................................................................",
+      "............................................................c..................................................................",
       "...............................................................................................................................",
-      "...............................................................................................................................",
-      "...............................................................................................................................",
-      ".............................................t.................................................................y...............",
+      "...............................................................................................................y...............",
       "..................b............................................................t...............................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
@@ -309,35 +336,35 @@ function setup() {
       "............................................b..................................................................................",
       "....................................................................t..........................................................",
       ".....................................................................................................t.........................",
+      "...........................c...................................................................................................",
       "...............................................................................................................................",
-      "..................y.......................................................f....................................................",
       "...............................................................................................................................",
-      "...............................................................................................................................",
-      "..............................................t..............................................s.................................",
+      "....................................................................f..........................................................",
+      ".................b............................t..............................................s.................................",
       ".................................................................................................................b.............",
       "...............................................................................................................................",
-      "...................t...........................................................................................................",
       "...............................................................................................................................",
-      "...........................................................y................t..................................................",
+      "...............................................................................................................................",
+      "...........................................c...............y................t..................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
       ".....................y..................................................................................t......................",
-      "...........................................................................y...................................................",
-      ".............................................b.................................................................................",
+      "...............................................................................................................................",
+      ".............................................b...........................y.....................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
-      "............t.................................s................................................................................",
-      "..............................f..............................................................................y.................",
+      "............t..................................................................................................................",
+      "..........................................................c..................................................y.................",
       "...............................................................................................................................",
-      "..........................................................................y....................................................",
-      "...............................................................................................................................",
+      "..........................................................................s....................................................",
+      ".........................s.....................................................................................................",
       "................................................................................................t..............................",
       "...............................................................................................................................",
-      "...................s.........................t.................................................................................",
-      ".........................................................y.....................................................................",
+      ".............................................t.................................................................................",
+      "...............................................................................................................................",
       "..............................................................................................................s................",
       ".........................................................................b.....................................................",
-      "..........y....................................................................................................................",
+      "..........y.................c..................................................................................................",
       "...............................................................................................................................",
       "..................................................................................................t............................",
       "........................................t......................................................................................",
@@ -347,29 +374,29 @@ function setup() {
       "..................t............................................................................................................",
       "...............................................................................................................................",
       "............................................................................................................f..................",
+      "............................................y....................c.............................................................",
       "...............................................................................................................................",
-      ".....................y.........................................................................................................",
-      "...........................................s...........y.......................t...............................................",
+      "...............................................................................t...............................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
       "...........................t...................................................................................................",
       ".................................................................................................t.............................",
       "......................................................t....................b...................................................",
       ".........b.....................................................................................................................",
-      "..................................f............................................................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
-      "..................................................................................y.............................s..............",
-      "..................................y............................................................................................",
+      "...............................................................................................................................",
+      "................................................................................................................s..............",
+      "........................................................................y......................................................",
       "....................................................b......................................t...................................",
       "........................t......................................................................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
-      "..............................................................................................................y................",
+      "........................................................................f.....................................y................",
       "...............................................................................................................................",
+      "............................................................................................s..................................",
       "...............................................................................................................................",
-      "............................................s..............y...................................................................",
       "..............t.................t.............s................................................................................",
       ".....................................................................t.........................................................",
       "...............................................................................................................................",
@@ -377,7 +404,7 @@ function setup() {
       "..................................................................................................b............................",
       ".......................................s.......................................................................................",
       "...............................................................................................................................",
-      "......................................y.....................t..................................................................",
+      "............................................................t..................................................................",
       "..........t....................................................................................................................",
       ".....................................................................................t..........................b..............",
       "...............................................................................................................................",
@@ -389,7 +416,7 @@ function setup() {
       "...............................................................................................................................",
       "...............................................................................................................................",
       "..........................................................................................t....................................",
-      ".......................t.......................................................................................................",
+      "...............................................................................................................................",
       "....................................................................y.........................................t................",
       "...............................................................................................................................",
       "............b..................................................................................................................",
@@ -399,15 +426,15 @@ function setup() {
       "...............................................................................................................................",
       "...............................................................................................................................",
       "...........................................f...............................b...................................................",
-      "...............................................................................................................................",
+      "......b........................................................................................................................",
       "............................................................................................................b..................",
       "...............................................................................................................................",
-      "............................s.............................................f....................................................",
+      "............................s..................................................................................................",
       "...............................................................................................................................",
       "................................................y..............................................................................",
-      ".............................................................................t.................................................",
+      ".............................................................................t............................f....................",
       "...............................................................................................................................",
-      "...............................................................................................................................",
+      "......s........................................................................................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
     ],
@@ -417,6 +444,41 @@ function setup() {
     35
   );
     
+  for(let crate of crates) {
+    crate.layer = 1;
+    crate.spriteSheet = cratesImg;
+    crate.anis.offset.x = -2;
+    crate.anis.offset.y = -4;
+    crate.anis.frameDelay = 8;
+    crate.addAnis({
+      broken: { row: 3, frames: 7 },
+      damaged: {row: 2, frames: 3},
+      idle: {row: 2, frames: 1},
+    });
+    crate.anis.broken.scale = 1.7;
+    crate.anis.broken.noLoop();
+    crate.anis.damaged.scale = 1.7;
+    crate.anis.idle.scale = 1.7;
+    crate.removeColliders();
+    crate.detector = new Sprite(crate.x, crate.y, 32, 32)
+    // crate.detector.debug = true;
+    crate.detector.visible = false;
+    crate.detector.collider = "s";
+    // crate.debug = true;
+    crate.damageTaken = false;
+    crate.damageAniRunning = false;
+    crate.health = 5;
+    
+    crate.entity = new YUKA.GameEntity()
+    crate.entity.position.x = crate.x;
+    crate.entity.position.z = crate.y;
+    crate.entity.boundingRadius = 50;
+    obstacles.push(crate.entity);
+    entityManager.add(crate.entity);
+
+    
+  }
+
   for(let tree of taigaTrees) {
     tree.removeColliders();
     tree.addCollider(0, -20, 100, 140);
@@ -460,10 +522,10 @@ function setup() {
 
 
   // player.autoDraw = false;
-  createEnemies(1);
+  
 
-  //entity manager
-  obstacleEntities = new YUKA.EntityManager();
+
+
 
   for(let obstacle of naturalResources) {
     let obst = new YUKA.GameEntity();
@@ -471,8 +533,19 @@ function setup() {
     obst.position.z = obstacle.y;
     obst.boundingRadius = 80;
     obstacles.push(obst);
-    obstacleEntities.add(obst);
+    entityManager.add(obst);
   }
+  
+
+  
+  initBehaviors();
+  createEnemies(25);
+
+  entities.push(player);
+
+  player.x = crates[0].x + 100;
+  player.y = crates[0].y + 100;
+  initGuns();
 }
 
 function draw() {
@@ -483,7 +556,7 @@ function draw() {
   noStroke();
   camera.on();
   
-
+  // crate[0].changeAni("broken")
 
   
   // console.log(player.x);
@@ -491,6 +564,7 @@ function draw() {
   image(bg, 0 - player.vel.x, 0 - player.vel.y);
   // player.draw();
   updatePlayerMovement();
+  updateHealth();
   // camera.moveTo(player, 1.5);
   
   // drawGrid();
@@ -499,15 +573,21 @@ function draw() {
 
 
   updateGuns();
-  updateEnemyGuns();
+  updateEnemies();
   updateInventory();
+  updateCrates();
 
+  entityManager.update(1/frameRate());
+  
   camera.x = player.x;
   camera.y = player.y;
-  obstacleEntities.update(1);
+  // obstacleEntities.update(1);
+  // console.log(enemies[0].vehicle.steering.behaviors); 
+  // console.log(enemies[0].targetEntity)
   // console.log("camera: " + camera.x + ", player: " + player.x);
   // console.log("player: " + player.x + ", box: " + box1.x);
   // console.log("diff: " + (player.x - box1.x));
+
 }
 
 function keyPressed() {
@@ -610,19 +690,31 @@ function updatePlayerMovement() {
     spd = 0;  
   }
 
-  player.gameEntity.position.x = player.x;
-  player.gameEntity.position.z = player.y;
+  player.vehicle.position.x = player.x;
+  player.vehicle.position.z = player.y;
+  // player.vehicle.update(1/frameRate());
 }
 
-function updateBullets(gun) {
-  if (gun.gunType === "shotgun") {
-    for (let i = gun.bulletArray.length - 1; i >= 0; i--) {
-      let bullet = gun.bulletArray[i];
+function updateHealth() {
+  // entities.forEach(function(entity) {
+  //   bullets.forEach(function(bullet){
+  //     if(entity.collides(bullet)){
+  //       entity.health -= bullet.damage;
 
-      bullet.scale *= 0.995;
+  //     }
+  //   })
+  // });
 
-    }
+  if(player.health <= 0) {
+    world.autoStep = false;
   }
+
+  bullets.forEach(function(bullet){
+    if(player.collides(bullet)){
+      player.health -= bullet.damage;
+      bullet.remove();
+    }
+  })
 }
 
 function keyTyped() {
@@ -862,9 +954,11 @@ function createGun(gun, x, y) {
     shotgun.rotationLock = true;
     shotgun.bulletArray = [];
     shotgun.inInventory = false;
+    shotgun.owner = player;
     // shotgun.timer = new Timer(5000);
     shotgun.bullets = new bullets.Group();
     shotgun.ammo = 10;
+    shotgun.damage = 0.5;
 
   
     // shotgun.timer.endTimer();
@@ -923,11 +1017,13 @@ function createGun(gun, x, y) {
           bullet.layer = 1;
           bullet.bounce = 0.8;
           bullet.life = this.range + random(-5, 5);
-          bullet.mass = 3;  
+          bullet.mass = 0;  
           bullet.bounciness = 1;
+          bullet.damage = this.damage;
+          bullet.owner = this.owner;
           bullet.update = () => {
             bullet.w = map(bullet.speed, 0, bullet.speed, 5, 6);
-            bullet.scale *= 0.99;
+            bullet.scale *= 0.95;
             bullet.rotation = bullet.direction;
 
           };
@@ -954,7 +1050,7 @@ function createGun(gun, x, y) {
     };
   }
   else if (gun === "pistol") {
-    pistol = new guns.Sprite(x, y);
+    let pistol = new guns.Sprite(x, y);
     pistol.removeColliders();
     pistol.layer = 2;
     pistol.bulletArray = [];
@@ -966,6 +1062,7 @@ function createGun(gun, x, y) {
     pistol.inInventory = false;
     pistol.bullets = new bullets.Group();
     pistol.ammo = 10;
+    pistol.damage = 1.5;
   
     pistolIcon = new Sprite();
     pistolIcon.removeColliders();
@@ -1004,9 +1101,12 @@ function createGun(gun, x, y) {
         bullet.speed = random(10, 12);
         bullet.collider = "d";
         bullet.layer = 1;
-        bullet.mass = 3;
+        bullet.mass = 0;
+        bullet.damage = this.damage;
+        bullet.bounciness = 1;
+        bullet.owner = this.owner;
         bullet.overlaps(bullets);
-        pistol.ammo -= 1;
+        this.ammo -= 1;
         // console.log(bullet.life)
         // this.bulletArray.push(bullet);
       }
@@ -1030,7 +1130,7 @@ function createGun(gun, x, y) {
     };
   }
   else if (gun === "sniper") {
-    sniper = new guns.Sprite(x, y);
+    let sniper = new guns.Sprite(x, y);
     sniper.removeColliders();
     sniper.gunType = "sniper";
     sniper.layer = 2;
@@ -1081,7 +1181,7 @@ function createGun(gun, x, y) {
         bullet.speed = random(10, 12);
         bullet.collider = "d";
         bullet.layer = 1;
-        bullet.mass = 3;
+        bullet.mass = 0;
         bullet.overlaps(bullets);
         this.ammo -= 1;
         // console.log(bullet.life)
@@ -1161,58 +1261,104 @@ function createEnemyGun(owner, type) {
     shotgun.scale = 0.9;
     shotgun.x = owner.x;
     shotgun.y = owner.y;
+    shotgun.damage = 0.5;
+    shotgun.timer = new Timer(random(500, 1000));
     // shotgun.rotateTowards(mouse, 1.2, 1);
     shotgun.rotation = owner.rotation;
 
 
     shotgun.shoot = function() {
-      for (let i = 0; i <= 10; i++) {
-        
-        //position from an angle
+      if(this.timer.expired()){
+        for (let i = 0; i <= 10; i++) {
+          
+          //position from an angle
+          let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
+          let gunPosTemp = createVector(this.x, this.y);
+          let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+          // bulletPos.setMag(1);
+    
+          let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+    
+          // bullet.diameter = 5;
+          bullet.w = 5;
+          bullet.h = 3;
+          // bullet.offset.y = 2.5;
+          bullet.color = "orange";
+          bullet.direction = this.rotation + random(-20,20);
+          bullet.speed = random(10, 13);
+          bullet.collider = "d";
+          bullet.layer = 1;
+          bullet.bounce = 0.8;
+          bullet.life = this.range + random(-5, 5);
+          bullet.mass = 0;  
+          bullet.bounciness = 1;
+          bullet.owner = this.owner;
+          bullet.damage = this.damage;
+          bullet.update = () => {
+            bullet.w = map(bullet.speed, 0, bullet.speed, 5, 6);
+            bullet.scale *= 0.99;
+            bullet.rotation = bullet.direction;
+          };
+          bullet.overlaps(bullets);
+        }
+        shotgun.timer.start();
+      };
+    }
+    return shotgun;
+  }
+  if(type === "pistol") {
+    pistol = new enemyGuns.Sprite(owner.x, owner.y);
+    pistol.removeColliders();
+    pistol.img = pistolImg;
+    pistol.gunType = "pistol";
+    pistol.owner = owner;
+    pistol.range = 70;
+    pistol.len = 39;
+    pistol.bullets = new bullets.Group();
+    pistol.layer = 6;
+    pistol.offset.x = 33;
+    pistol.scale = 0.6;
+    pistol.damage = 1.5;
+    pistol.timer = new Timer(random(500, 1000));
+
+    pistol.shoot = function() {
+      if(this.timer.expired()){
         let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
         let gunPosTemp = createVector(this.x, this.y);
         let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
-        // bulletPos.setMag(1);
-  
-        let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
-  
-        // bullet.diameter = 5;
-        bullet.w = 5;
-        bullet.h = 3;
-        // bullet.offset.y = 2.5;
-        bullet.color = "orange";
-        bullet.direction = this.rotation + random(-20,20);
-        bullet.speed = random(10, 13);
+    
+        // let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+        let bullet = new this.bullets.Sprite(bulletPos.x, bulletPos.y);
+        
+        bullet.life = this.range;
+        bullet.diameter = 6;
+        bullet.color = "black";
+        bullet.direction = this.rotation;
+        bullet.speed = random(13, 15);
         bullet.collider = "d";
         bullet.layer = 1;
-        bullet.bounce = 0.8;
-        bullet.life = this.range + random(-5, 5);
-        bullet.mass = 3;  
+        bullet.mass = 0;
+        bullet.damage = this.damage;
         bullet.bounciness = 1;
-        bullet.update = () => {
-          bullet.w = map(bullet.speed, 0, bullet.speed, 5, 6);
-          bullet.scale *= 0.99;
-          bullet.rotation = bullet.direction;
-        };
+        bullet.owner = this.owner;
         bullet.overlaps(bullets);
+        this.timer.start();
       }
-    };
-    return shotgun;
+    }
+    return pistol;
   }
 }
 
-function updateEnemyGuns() {
+
+
+function updateEnemies() {
   enemies.forEach(function(enemy) {
     enemy.gun.x = enemy.x;
     enemy.gun.y = enemy.y;
-    if(dist(enemy.x, enemy.y, player.x, player.y) < 300) {
-      enemy.rotateTowards(player);
-      enemy.gun.rotateTowards(player, 0.1);
-    }
-    else {
-      
-      enemy.rotateTowards(enemy.direction);
-      enemy.gun.rotateTowards(enemy.rotation);
+
+    if(dist(enemy.x, enemy.y, enemy.vehicle.position.x, enemy.vehicle.position.z) > 5) {
+      enemy.vehicle.position.x = enemy.x;
+      enemy.vehicle.position.z = enemy.y;
     }
     // let rot;
     // if(enemy.rotation < 0) {
@@ -1222,10 +1368,68 @@ function updateEnemyGuns() {
     //   rot = enemy.rotation;
     // }
     // enemy.gun.rotateTowards(enemy.rotation);
-    enemy.velocity.x = enemy.vehicle.velocity.x;
-    enemy.velocity.y = enemy.vehicle.velocity.z;
+    enemy.velocity.x = enemy.vehicle.velocity.x * (1/frameRate());
+    enemy.velocity.y = enemy.vehicle.velocity.z * (1/frameRate());
     // enemy.rotateTowards(enemy.direction);
-    enemy.vehicle.update(1);
+    // enemy.vehicle.update(1/frameRate());
+
+    if(mouse.presses()) {
+      console.log("hi");
+    }
+
+    // if(enemy.targetEntity && entityManager.entities.includes(enemy.targetEntity.vehicle)) {
+    //   enemy.targetEntity.remove();
+    // }
+
+    let entityInVicinity = entities.some(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
+    if(entityInVicinity){
+
+      let targetEntity = entities.find(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy)
+      enemy.gun.shoot();
+      if(!enemy.vehicle.steering.behaviors[2].active || enemy.vehicle.steering.behaviors[2].evader !== targetEntity.vehicle) {
+        
+        // enemy.vehicle.steering.behaviors[2].offset.set(random(-200, 100), 0, random(-200, 200));
+        if(!enemy.vehicle.steering.behaviors[0].obstacles.includes(targetEntity.vehicle)){
+          enemy.vehicle.steering.behaviors[0].obstacles.push(targetEntity.vehicle);
+        }
+        enemy.vehicle.maxSpeed = 80;
+        enemy.vehicle.steering.behaviors[2].evader = targetEntity.vehicle;
+        enemy.vehicle.steering.behaviors[2].active = true;
+      }
+      enemy.gun.rotateTowards(targetEntity, 1);
+    }
+    // else if(enemy.angry){
+    //   enemy.gun.rotateTowards(enemy.targetEntity);
+    //   enemy.gun.shoot();
+    // }
+    else{
+      // enemy.vehicle.steering.behaviors[1].active = true;
+      enemy.targetEntity = undefined;
+      enemy.vehicle.steering.behaviors[2].active = false;
+      enemy.gun.rotateTowards(enemy.direction);
+      // console.log()
+      
+    }
+
+
+    bullets.forEach(function(bullet){
+      if(enemy.collides(bullet)){
+        enemy.health -= bullet.damage;
+        bullet.remove();
+        enemy.angry = true;
+        enemy.vehicle.steering.behaviors[2].evader = bullet.owner.vehicle;
+        enemy.vehicle.steering.behaviors[2].active = true;
+        // enemy.vehicle.steering.behaviors[3].pursuer = bullet.owner.vehicle;
+        // enemy.vehicle.steering.behaviors[3].active = true;
+        enemy.targetEntity = bullet.owner;
+      }
+    })
+
+    if(enemy.health <= 0) {
+      enemy.isKilled();
+    }
+
+
     // enemy.moveTo(enemy.goalPoint, 1);
     // if(enemy.x === enemy.goalPoint.x && enemy.y === enemy.goalPoint.y){
     //   enemy.reached = true;
@@ -1241,41 +1445,135 @@ function updateEnemyGuns() {
   // console.log(enemies[0].rotation);
 }
 
+
+//behaviors
+function initBehaviors() {
+
+  // seekBehavior = new YUKA.SeekBehavior(new YUKA.Vector3(player.x, 0, player.y));
+  wanderBehavior = new YUKA.WanderBehavior();
+  wanderBehavior.jitter = 2;
+  wanderBehavior.radius = 1.5;
+  wanderBehavior.distance = 10;
+  wanderBehavior.weight = 3;
+  wanderBehavior.active = true;
+
+  obstacleAvoidanceBehavior = new YUKA.ObstacleAvoidanceBehavior(obstacles);
+  obstacleAvoidanceBehavior.dBoxMinLength = 110;
+  obstacleAvoidanceBehavior.weight = 10;
+  obstacleAvoidanceBehavior.brakingWeight = 0.5;
+}
+
 function createEnemies(num) {
   for(let i = 0; i < num; i++) {
-    let enemy = new enemies.Sprite(player.x + 150, player.y + 100);
-    enemy.gun = createEnemyGun(enemy, "shotgun");
-    enemy.goalPoint = enemy.position.copy();
+    let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
+    enemy.gun = createEnemyGun(enemy, random(["pistol", "shotgun"]));
+    enemy.rotationLock = true;
+    // enemy.goalPoint = enemy.position.copy();
     enemy.reached = true;
     enemy.vehicle = new YUKA.Vehicle();
+    enemy.vehicle.name = i;
     enemy.vehicle.boundingRadius = 100;
     enemy.vehicle.position.x = enemy.x;
     enemy.vehicle.position.z = enemy.y;
-    enemy.vehicle.maxSpeed = 2;
-    enemy.vehicle.smoother = new YUKA.Smoother(3);
+    enemy.vehicle.maxSpeed = 120;
+    enemy.health = 20;
+    obstacles.push(enemy.vehicle);
+    enemy.vehicle.smoother = new YUKA.Smoother(20);
+    enemy.isKilled = function() {
+      enemy.gun.remove();
+      entityManager.remove(enemy.vehicle);
+      enemy.remove();
+    }
+    entityManager.add(enemy.vehicle);
+
+    
     // enemy.vehicle.goal = new YUKA.Goal()
     
 
-    //pursure behavior
-    let pursueBehavior = new YUKA.PursuitBehavior(player.gameEntity);
+    //avoid behavior
+
+
+    
 
     //defining wander behavior
-    let wanderBehavior = new YUKA.WanderBehavior();
-    wanderBehavior.jitter = 1.5;
-    wanderBehavior.radius = 0.2;
-    // wanderBehavior.weight = 5;
+    
+    let pursueBehavior = new YUKA.PursuitBehavior(player.vehicle);
+    pursueBehavior.active = false;
+    pursueBehavior.weight = 1;
 
+    let offsetpursuitBehavior = new YUKA.OffsetPursuitBehavior(player.vehicle, new YUKA.Vector3(200, 0, 200));
+    offsetpursuitBehavior.active = false;
+    offsetpursuitBehavior.weight = 1;
     //defining avoidance behavior
-    let obstacleAvoidanceBehavior = new YUKA.ObstacleAvoidanceBehavior(obstacles);
-    obstacleAvoidanceBehavior.dBoxMinLength = 80;
-    // obstacleAvoidanceBehavior.weight = 1;
-    obstacleAvoidanceBehavior.brakingWeight = 0.8;
+    
+    let separationBehavior = new YUKA.SeparationBehavior();
+    separationBehavior.active = false;
+    separationBehavior.weight = 3;
+
+
+    let evadeBehavior = new YUKA.EvadeBehavior(player.vehicle, 200, 20);
+    evadeBehavior.active = false;
+    evadeBehavior.weight = 10;
+
+    
+
 
 
     // enemy.vehicle.steering.behaviors.push(wanderBehavior);
-    // enemy.vehicle.steering.behaviors.push(obstacleAvoidanceBehavior);
+    enemy.vehicle.steering.behaviors.push(obstacleAvoidanceBehavior);
+    enemy.vehicle.steering.behaviors.push(wanderBehavior);
+    enemy.vehicle.steering.behaviors.push(pursueBehavior);
+    enemy.vehicle.steering.behaviors.push(evadeBehavior);
+    // enemy.vehicle.steering.behaviors.push(seekBehavior);
     // enemy.vehicle.steering.behaviors.push(pursueBehavior);
+    // enemy.vehicle.steering.behaviors.push(seekBehavior);
     // setInterval(enemy.gun.shoot(), 3000);
     
   }
+}
+
+function updateCrates() {
+  crates.forEach(function(crate){
+    if(crate.health <= 0) {
+      if(crate.ani.name !== "broken"){
+        crate.changeAni("broken");
+        crate.detector.remove();
+        entityManager.remove(crate.entity);
+
+        //removing the obstacle for each enemy so they can walk through it
+        for(let enemy of enemies) {
+          let obsts = enemy.vehicle.steering.behaviors[0].obstacles
+          obsts.splice(obsts.indexOf(crate.entity), 1);
+        }
+        
+      }
+      if(crate.ani.frame === 6) {
+        // crate.detector.remove();
+        crate.remove();
+        createGun(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
+        createGun(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
+      }
+    }
+    else {
+      if(crate.detector.collides(bullets)) {
+        crate.damageTaken = true; 
+        crate.health -= 1;
+      }
+  
+      if(crate.damageTaken) {
+        crate.changeAni("damaged")
+        crate.damageAniRunning = true;
+        crate.damageTaken = false;
+      }
+      if(crate.damageAniRunning) {
+        if(crate.anis.damaged.frame === 2) {
+          crate.anis.damaged.frame = 0;
+          crate.damageAniRunning = false;
+        }
+      }
+      if(!crate.damageAniRunning) {
+        crate.changeAni("idle");
+      }
+    }
+  })
 }
