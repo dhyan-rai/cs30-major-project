@@ -23,6 +23,7 @@ let keys = new Set();
 let taigaTrees, taigaTreeImg, stones, yellowTrees, yellowTreeImg, bigRocks, bigRockImg, smallRocks, smallRockImg;
 let flowerBaskets, flowerBasketImg;
 let naturalResources;
+let walls1, wallImg1;
 
 //entities
 let enemies, player, entities;
@@ -46,7 +47,7 @@ let sniperIcon, sniperIconImg;
 let ball, extraCanvas;
 
 //gui elements
-let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg;
+let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg, loadingAniSpriteSheet, loadingAni;
 
 //pathfinding vars
 let grid, referenceBoxes;
@@ -63,6 +64,10 @@ let enemyGuns;
 
 //crates
 let crates, crate, crateSpriteSheet;
+
+
+//zone
+let zoneRadius = 1000, zoneTimer, zone;
 
 //timers
 
@@ -96,12 +101,13 @@ function preload() {
   shotgunIconImg = loadImage("assets/gun-assets/icons/shotgun.png");
   box1Img = loadImage("assets/inventory/inventory-box-blue.png");
   selectionBoxImg = loadImage("assets/inventory/selection-box.png");
-
+  wallImg1 = loadImage("assets/tile-images/wall-image-1.png");
 
   //ammo images
   shotgunAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-shotgun.png");
   pistolAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-pistol.png");
   sniperAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-sniper.png");
+  loadingAniSpriteSheet = loadImage("assets/inventory/loading-ani.png");
 
   // crateBrokenSheet = loadImage("assets/tile-images/crate-broken.png");
   crateSpriteSheet = loadImage("assets/tile-images/crates-clean.png");
@@ -115,9 +121,10 @@ function preload() {
 
 function setup() {
 
+  // frameRate(60);
   rectMode(CENTER);
   angleMode(DEGREES);
-
+  allSprites.autoCull = false
 
   // cursor("assets/icons/shotgun.png");
 
@@ -132,7 +139,7 @@ function setup() {
   crates.h = 64;
   crates.tile = "c";
   
-  
+  //zone
 
 
   // for(let i = 0; i < grid.length; i++) {
@@ -183,19 +190,51 @@ function setup() {
   player.vehicle.name = "player";
   entityManager.add(player.vehicle);
   obstacles.push(player.vehicle);
+  entities.push(player);
 
   //for reloading
   player.reloading = false;
   player.reloadGun = function() {
     if(this.activeSlot.gun.reloadTimer.expired()) {
       player.reloading = false;
+      loadingAni.visible = false;
     }
     else {
-      player.activeSlot.gun.ammo += 1;
+      
+      // if(player.activeSlot.gun.reloadTimer.getRemainingTime() === 1000){
       let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
-      currentAmmo -= 1;
+      let ammosReloaded = floor(map(player.activeSlot.gun.reloadTimer.getRemainingTime(), player.activeSlot.gun.reloadTimer.duration, 0, 0, player.activeSlot.gun.reloadBy + 1));
+      player.current = ammosReloaded;
+
+      if(player.current !== player.prev) {
+        player.activeSlot.gun.ammo += 1;
+        currentAmmo.ammoLeft -= 1;
+      }
+
+      player.prev = player.current;
+      // }
+      // let timer = player.activeSlot.gun.reloadTimer;
+      let loadingFrame = floor(map(player.activeSlot.gun.reloadTimer.getRemainingTime(), player.activeSlot.gun.reloadTimer.duration, 0, 0, 5));
+      if(loadingAni.ani.frames[loadingFrame]) {
+        loadingAni.ani.frame = loadingFrame;
+      }
+
     }
   };
+
+  //reload animation
+
+  // loadingAni.spriteSheet = loadingAniSpriteSheet;
+  // loadingAni.addAnis = ({
+  //   loading: { row: 0, frames: 4},
+  // })
+  // loadingAni.img = loadingAniSpriteSheet;
+  // loadingAni.layer = 20;
+  // loadingAni.removeColliders();
+  // loadingAni.anis.frameDelay = 8;
+  
+  // loadingAni.anis.stop();
+  // loadingAni.visible = false;
 
   class Ammo{
     constructor(type, ammoLeft) {
@@ -206,7 +245,7 @@ function setup() {
   
   player.ammos = [new Ammo("shotgun", 0), new Ammo("sniper", 0), new Ammo("pistol", 0)];
   
-  player.reloadTimer = new Timer(4000);
+  // player.reloadTimer = new Timer(4000);
 
 
 
@@ -302,6 +341,13 @@ function setup() {
   naturalResources.collider = "s";
   naturalResources.bounciness = 0;
 
+
+  //walls
+  walls1 = new naturalResources.Group();
+  walls1.img = wallImg1
+  walls1.tile = "w";
+
+
   //tree tiles
   taigaTrees = new naturalResources.Group();
   taigaTrees.img = taigaTreeImg;
@@ -330,7 +376,7 @@ function setup() {
 
   tileMap = new Tiles(
     [
-      "...............................................................................................................................",
+      ".wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww........................................................................................",
       ".....c..................................t......................................................................................",
       "............................................................c..................................................................",
       "...............................................................................................................................",
@@ -495,6 +541,13 @@ function setup() {
     
   }
 
+  for(let wall of walls1) {
+    wall.removeColliders();
+    wall.addCollider(0, 45, 175, 175);
+    wall.layer = 0;
+    wall.scale = 0.2;
+  }
+
   for(let tree of taigaTrees) {
     tree.removeColliders();
     tree.addCollider(0, -20, 100, 140);
@@ -555,23 +608,50 @@ function setup() {
 
   
   initBehaviors();
-  createEnemies(25);
+  createEnemies(30);
 
-  entities.push(player);
+  
 
   player.x = crates[0].x + 100;
   player.y = crates[0].y + 100;
   initGuns();
+
+  loadingAni = new Sprite(player.x, player.y, 48, 48);
+  loadingAni.removeColliders();
+  // loadingAni.addAni("loading", loadingAniSpriteSheet, 5, 8);
+  loadingAni.spriteSheet = loadingAniSpriteSheet;
+  loadingAni.anis.frameDelay = 8;
+  loadingAni.addAnis({
+    loading: {row: 0, frames: 5},
+  })
+  loadingAni.ani.scale = 1.3;
+  loadingAni.ani.stop();
+  loadingAni.visible = false;
+  
+  // loadingAni.ani.frame = 3;
+
+
+  //zone overlapping
+  zoneTimer = new Timer(20000);
+  zoneTimer.start();
+  zone = new Sprite(player.x, player.y, 80, "s");
+  zone.strokeWeight = 5;
+  zone.color = color(0, 0, 0, 0);
+  zone.layer = 50;
+  zone.overlaps(entities);
+  zone.overlaps(naturalResources);
+  zone.overlaps(bullets);
 }
 
 function draw() {
-  clear();
+  // clear();
   
   
   background(10);
   noStroke();
   camera.on();
   
+  // console.log(enemies.length);
   // crate[0].changeAni("broken")
 
   
@@ -587,6 +667,7 @@ function draw() {
   camera.off();
   // trackPlayer();
 
+  zone.radius = zoneRadius;
 
   updateGuns();
   updateEnemies();
@@ -595,8 +676,12 @@ function draw() {
 
   entityManager.update(1/frameRate());
   
+  loadingAni.x = player.x;
+  loadingAni.y = player.y;
   camera.x = player.x;
   camera.y = player.y;
+  // console.log(player.ammos[0])
+  
   // obstacleEntities.update(1);
   // console.log(enemies[0].vehicle.steering.behaviors); 
   // console.log(enemies[0].targetEntity)
@@ -631,7 +716,7 @@ let spd = 0;
 let accel = 0.1;
 function updatePlayerMovement() {
   // console.log(keys);
-  let maxSpd = 5;
+  let maxSpd = 4;
   if (keyIsPressed && [...keys].some(element => ["w", "a", "s", "d"].includes(element))) {
     if (keyIsDown(87)) {
       // player.moveTowards(player.position.x, player.position.y - 0.5, spd);
@@ -744,12 +829,17 @@ function keyTyped() {
     if(player.activeSlot.isFull) {
       let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
       if(currentAmmo && currentAmmo.ammoLeft > 0) {
-        // currentAmmo.ammoLeft -= 10;
         // player.activeSlot.gun.ammo = 10;
         // console.log("locked and loaded sir");
         if(player.reloading === false){
+          // currentAmmo.ammoLeft -= 10;
+          player.activeSlot.gun.ammo = 0;
           player.activeSlot.gun.reloadTimer.start();
           player.reloading = true;
+          loadingAni.visible = true;
+          loadingAni.ani.frame = 0;
+          player.prev = 0;
+          player.current = 0;
         }
       }
     }
@@ -760,28 +850,28 @@ function initGui() {
   box1 = new Sprite(player.x + 220, player.y + 160);
   // box1.autoDraw = false;
   box1.img = box1Img;
-  box1.layer = 7;
+  box1.layer = 25;
   box1.removeColliders();
   box1.scale = 1.5;
   box1.taken = false;
 
   box2 = new Sprite(player.x + 300, player.y + 160);
   box2.img = box1Img;
-  box2.layer = 7;
+  box2.layer = 25;
   box2.removeColliders();
   box2.scale = 1.5;
   box2.taken = false;
 
   box3 = new Sprite(player.x + 380, player.y + 160);
   box3.img = box1Img;
-  box3.layer = 7;
+  box3.layer = 25;
   box3.removeColliders();
   box3.scale = 1.5;
   box3.taken = false;
 
   selectionBox = new Sprite(box1.x + 10, box1.y);
   selectionBox.img = selectionBoxImg;
-  selectionBox.layer = 6;
+  selectionBox.layer = 24;
   selectionBox.removeColliders();
   selectionBox.scale = 2.2;
 
@@ -885,13 +975,13 @@ function updateGuns() {
 
   if(!player.reloading) {
     let ammoInVicinity = ammos.some(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
-    if(kb.presses("f") && ammoInVicinity && !player.reloading){
+    if(kb.presses("f") && ammoInVicinity){
       let ammo = ammos.find(ammo => dist(player.x, player.y, ammo.x, ammo.y) < 50);
       ammo.isPicked();
     }
   
     let gunInVicinity = guns.some(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
-    if(kb.presses("e") && !player.reloading){
+    if(kb.presses("e")){
       if(gunInVicinity){
         let gun = guns.find(gun => dist(player.x, player.y, gun.x, gun.y) < 50 && !gun.inInventory);
         if ( player.inventoryIsFull === false) {
@@ -920,7 +1010,7 @@ function updateGuns() {
   }
 
   if(player.reloading) {
-    player.speed *= 0.8;
+    player.speed *= 0.5;
     player.reloadGun();
   }
 }
@@ -977,9 +1067,10 @@ function createGun(gun, x, y) {
     shotgun.bulletArray = [];
     shotgun.inInventory = false;
     shotgun.owner = player;
-    shotgun.reloadTimer = new Timer(5000);
+    shotgun.reloadTimer = new Timer(3500);
     shotgun.bullets = new bullets.Group();
-    shotgun.ammo = 10;
+    shotgun.ammo = 8;
+    shotgun.reloadBy = 8;
     shotgun.damage = 0.5;
 
   
@@ -987,7 +1078,7 @@ function createGun(gun, x, y) {
   
     //creating shotgun logo for the gui
     shotgunIcon = new Sprite();
-    shotgunIcon.layer = 8;
+    shotgunIcon.layer = 30;
     shotgunIcon.img = shotgunIconImg;
     shotgunIcon.rotate(-35);
     shotgunIcon.removeColliders();
@@ -1083,8 +1174,10 @@ function createGun(gun, x, y) {
     pistol.scale = 0.1;
     pistol.inInventory = false;
     pistol.bullets = new bullets.Group();
-    pistol.ammo = 10;
+    pistol.ammo = 12;
     pistol.damage = 1.5;
+    pistol.reloadBy = 12;
+    pistol.reloadTimer = new Timer(2500);
   
     pistolIcon = new Sprite();
     pistolIcon.removeColliders();
@@ -1163,8 +1256,12 @@ function createGun(gun, x, y) {
     sniper.scale = 0.073;
     sniper.inInventory = false;
     sniper.bullets = new bullets.Group();
-    sniper.ammo = 10;
-  
+    sniper.ammo = 5;
+    sniper.reloadBy = 5;
+    sniper.damage = 10;
+    sniper.reloadTimer = new Timer(6000);
+    sniper.owner = player;
+
     sniperIcon = new Sprite();
     sniperIcon.removeColliders();
     sniperIcon.img = sniperIconImg;
@@ -1205,6 +1302,8 @@ function createGun(gun, x, y) {
         bullet.layer = 1;
         bullet.mass = 0;
         bullet.overlaps(bullets);
+        bullet.owner = this.owner;
+        bullet.damage = this.damage;
         this.ammo -= 1;
         // console.log(bullet.life)
         // this.bulletArray.push(bullet);
@@ -1237,11 +1336,12 @@ function createAmmo(gunType, x, y) {
     shotgunAmmo.removeColliders();
     shotgunAmmo.scale = 0.7;
     shotgunAmmo.rotation = random(360);
+    shotgunAmmo.layer = 0;
     // shotgunAmmo.debug = true;
     shotgunAmmo.type = "shotgun";
     shotgunAmmo.isPicked = function() {
       let gunAmmo = player.ammos.find((ammoType) => ammoType.type === "shotgun");
-      gunAmmo.ammoLeft += 10;
+      gunAmmo.ammoLeft += 8;
       this.remove();
     };
   }
@@ -1251,11 +1351,12 @@ function createAmmo(gunType, x, y) {
     pistolAmmo.removeColliders();
     pistolAmmo.scale = 0.7;
     pistolAmmo.rotation = random(360);
+    pistolAmmo.layer = 0;
     // pistolAmmo.debug = true;
     pistolAmmo.type = "pistol";
     pistolAmmo.isPicked = function() {
       let gunAmmo = player.ammos.find((ammoType) => ammoType.type === "pistol");
-      gunAmmo.ammoLeft += 10;
+      gunAmmo.ammoLeft += 12;
       this.remove();
     };
   }
@@ -1265,11 +1366,12 @@ function createAmmo(gunType, x, y) {
     sniperAmmo.removeColliders();
     sniperAmmo.scale = 0.7;
     sniperAmmo.rotation = random(360);
+    sniperAmmo.layer = 0;
     // sniperAmmo.debug = true;
     sniperAmmo.type = "sniper";
     sniperAmmo.isPicked = function() {
       let gunAmmo = player.ammos.find((ammoType) => ammoType.type === "sniper");
-      gunAmmo.ammoLeft += 10;
+      gunAmmo.ammoLeft += 5;
       this.remove();
     };
   }
@@ -1294,6 +1396,7 @@ function createEnemyGun(owner, type) {
     shotgun.y = owner.y;
     shotgun.damage = 0.5;
     shotgun.timer = new Timer(random(500, 1000));
+    
     // shotgun.rotateTowards(mouse, 1.2, 1);
     shotgun.rotation = owner.rotation;
 
@@ -1383,7 +1486,10 @@ function createEnemyGun(owner, type) {
 
 
 function updateEnemies() {
-  enemies.forEach(function(enemy) {
+  for(let i = enemies.length - 1; i >= 0; i--) {
+
+    let enemy = enemies[i];
+
     enemy.gun.x = enemy.x;
     enemy.gun.y = enemy.y;
 
@@ -1404,30 +1510,59 @@ function updateEnemies() {
     // enemy.rotateTowards(enemy.direction);
     // enemy.vehicle.update(1/frameRate());
 
-    if(mouse.presses()) {
-      console.log("hi");
-    }
+
 
     // if(enemy.targetEntity && entityManager.entities.includes(enemy.targetEntity.vehicle)) {
     //   enemy.targetEntity.remove();
     // }
-
     let entityInVicinity = entities.some(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
-    if(entityInVicinity){
+
+    if(dist(enemy.x, enemy.y, bg.width/2, bg.height/2) > zoneRadius){
+      if(!enemy.vehicle.steering.behaviors[3].active){
+        enemy.vehicle.steering.behaviors[1].active = false;
+        enemy.vehicle.steering.behaviors[2].active = false;
+        enemy.vehicle.steering.behaviors[3].active = true;
+      }
+      if(entityInVicinity) {
+        let targetEntity = entities.find(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
+        enemy.gun.rotateTowards(targetEntity);
+        enemy.gun.shoot();
+      }
+      else{
+        enemy.gun.rotateTowards(enemy.direction);
+      }
+    }
+    
+    else if(entityInVicinity){
 
       let targetEntity = entities.find(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
-      enemy.gun.shoot();
-      if(!enemy.vehicle.steering.behaviors[2].active || enemy.vehicle.steering.behaviors[2].evader !== targetEntity.vehicle) {
-        
-        // enemy.vehicle.steering.behaviors[2].offset.set(random(-200, 100), 0, random(-200, 200));
-        if(!enemy.vehicle.steering.behaviors[0].obstacles.includes(targetEntity.vehicle)){
-          enemy.vehicle.steering.behaviors[0].obstacles.push(targetEntity.vehicle);
+      // if(enemy.evadeWeight > 8) {
+      //   // if(!enemy.vehicle.steering.behaviors[3].active){
+      //   //   enemy.maxSpeed = 400;
+      //   //   enemy.vehicle.steering.behaviors[3].active = true;
+      //   //   enemy.vehicle.steering.behaviors[1].active = false;
+      //   //   // enemy.vehicle.steering.behaviors[0].active = false;
+      //   // }
+      //   // enemy.vehicle.steering.behaviors[3].target.set(targetEntity.vehicle.position.x, 0, targetEntity.vehicle.position.z);
+      //   // enemy.gun.rotateTowards(enemy.direction);
+      // }
+      // if{
+        enemy.gun.shoot();
+        if(!enemy.vehicle.steering.behaviors[2].active || enemy.vehicle.steering.behaviors[2].evader !== targetEntity.vehicle) {
+          
+          // enemy.vehicle.steering.behaviors[2].offset.set(random(-200, 100), 0, random(-200, 200));
+          if(!enemy.vehicle.steering.behaviors[0].obstacles.includes(targetEntity.vehicle)){
+            enemy.vehicle.steering.behaviors[0].obstacles.push(targetEntity.vehicle);
+          }
+          // enemy.vehicle.maxSpeed = 80;
+          enemy.vehicle.steering.behaviors[2].evader = targetEntity.vehicle;
+          enemy.vehicle.steering.behaviors[2].active = true;
+          enemy.vehicle.steering.behaviors[3].active = false;
+          enemy.vehicle.steering.behaviors[1].active = true;
+          // enemy.maxSpeed = 120;
         }
-        enemy.vehicle.maxSpeed = 80;
-        enemy.vehicle.steering.behaviors[2].evader = targetEntity.vehicle;
-        enemy.vehicle.steering.behaviors[2].active = true;
-      }
-      enemy.gun.rotateTowards(targetEntity, 1);
+        enemy.gun.rotateTowards(targetEntity, 0.1);
+      // }
     }
     // else if(enemy.angry){
     //   enemy.gun.rotateTowards(enemy.targetEntity);
@@ -1437,6 +1572,7 @@ function updateEnemies() {
       // enemy.vehicle.steering.behaviors[1].active = true;
       enemy.targetEntity = undefined;
       enemy.vehicle.steering.behaviors[2].active = false;
+      enemy.vehicle.steering.behaviors[1].active = true;
       enemy.gun.rotateTowards(enemy.direction);
       // console.log()
       
@@ -1446,13 +1582,14 @@ function updateEnemies() {
     bullets.forEach(function(bullet){
       if(enemy.collides(bullet)){
         enemy.health -= bullet.damage;
+        enemy.evadeWeight += 1;
         bullet.remove();
-        enemy.angry = true;
-        enemy.vehicle.steering.behaviors[2].evader = bullet.owner.vehicle;
-        enemy.vehicle.steering.behaviors[2].active = true;
-        // enemy.vehicle.steering.behaviors[3].pursuer = bullet.owner.vehicle;
-        // enemy.vehicle.steering.behaviors[3].active = true;
-        enemy.targetEntity = bullet.owner;
+        // enemy.angry = true;
+        // enemy.vehicle.steering.behaviors[2].evader = bullet.owner.vehicle;
+        // enemy.vehicle.steering.behaviors[2].active = true;
+        // // enemy.vehicle.steering.behaviors[3].pursuer = bullet.owner.vehicle;
+        // // enemy.vehicle.steering.behaviors[3].active = true;
+        // enemy.targetEntity = bullet.owner;
       }
     });
 
@@ -1470,8 +1607,8 @@ function updateEnemies() {
     //   enemy.goalPoint = createVector(enemy.x + random(-100, 100), enemy.y + random(-10, 10));
     //   enemy.reached = false;
     // }
-    
-  });
+    enemy.evadeWeight -= 0.001;
+  };
 
   // console.log(enemies[0].rotation);
 }
@@ -1484,13 +1621,13 @@ function initBehaviors() {
   wanderBehavior = new YUKA.WanderBehavior();
   wanderBehavior.jitter = 2;
   wanderBehavior.radius = 1.5;
-  wanderBehavior.distance = 10;
-  wanderBehavior.weight = 3;
+  wanderBehavior.distance = 1;
+  wanderBehavior.weight = 10;
   wanderBehavior.active = true;
 
   obstacleAvoidanceBehavior = new YUKA.ObstacleAvoidanceBehavior(obstacles);
   obstacleAvoidanceBehavior.dBoxMinLength = 110;
-  obstacleAvoidanceBehavior.weight = 10;
+  obstacleAvoidanceBehavior.weight = 1;
   obstacleAvoidanceBehavior.brakingWeight = 0.5;
 }
 
@@ -1503,11 +1640,12 @@ function createEnemies(num) {
     enemy.reached = true;
     enemy.vehicle = new YUKA.Vehicle();
     enemy.vehicle.name = i;
-    enemy.vehicle.boundingRadius = 100;
+    enemy.vehicle.boundingRadius = 200;
     enemy.vehicle.position.x = enemy.x;
     enemy.vehicle.position.z = enemy.y;
-    enemy.vehicle.maxSpeed = 120;
+    enemy.vehicle.maxSpeed = 150;
     enemy.health = 20;
+    enemy.evadeWeight = 0;
     obstacles.push(enemy.vehicle);
     enemy.vehicle.smoother = new YUKA.Smoother(20);
     enemy.isKilled = function() {
@@ -1544,9 +1682,11 @@ function createEnemies(num) {
 
     let evadeBehavior = new YUKA.EvadeBehavior(player.vehicle, 200, 20);
     evadeBehavior.active = false;
-    evadeBehavior.weight = 10;
+    evadeBehavior.weight = 20;
 
-    
+    let seekBehavior = new YUKA.SeekBehavior(new YUKA.Vector3(bg.width/2, 0, bg.height/2));
+
+    let fleeBehavior = new YUKA.FleeBehavior(new YUKA.Vector3(player.vehicle.position.x, 0, player.vehicle.position.z), 300);
 
 
 
@@ -1554,7 +1694,7 @@ function createEnemies(num) {
     enemy.vehicle.steering.behaviors.push(obstacleAvoidanceBehavior);
     enemy.vehicle.steering.behaviors.push(wanderBehavior);
     enemy.vehicle.steering.behaviors.push(pursueBehavior);
-    enemy.vehicle.steering.behaviors.push(evadeBehavior);
+    enemy.vehicle.steering.behaviors.push(seekBehavior);
     // enemy.vehicle.steering.behaviors.push(seekBehavior);
     // enemy.vehicle.steering.behaviors.push(pursueBehavior);
     // enemy.vehicle.steering.behaviors.push(seekBehavior);
@@ -1564,7 +1704,8 @@ function createEnemies(num) {
 }
 
 function updateCrates() {
-  crates.forEach(function(crate){
+  for(let i = crates.length - 1; i >= 0; i--){
+    let crate = crates[i];
     if(crate.health <= 0) {
       if(crate.ani.name !== "broken"){
         crate.changeAni("broken");
@@ -1581,8 +1722,8 @@ function updateCrates() {
       if(crate.ani.frame === 6) {
         // crate.detector.remove();
         crate.remove();
-        createGun(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
-        createGun(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
+        createAmmo(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
+        createAmmo(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
       }
     }
     else {
@@ -1606,5 +1747,13 @@ function updateCrates() {
         crate.changeAni("idle");
       }
     }
-  });
+  };
+}
+
+function updateZoneRadius() {
+  if(zoneTimer.expired()) {
+    if(zoneRadius >= 100) {
+      zoneRadius -= 100;
+    }
+  }
 }
