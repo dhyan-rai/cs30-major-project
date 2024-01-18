@@ -67,7 +67,9 @@ let crates, crate, crateSpriteSheet;
 
 
 //zone
-let zoneRadius = 1000, zoneTimer, zone;
+let zoneRadius = 1500, zoneTimer, zone;
+
+
 
 //timers
 
@@ -124,7 +126,7 @@ function setup() {
   // frameRate(60);
   rectMode(CENTER);
   angleMode(DEGREES);
-  allSprites.autoCull = false
+  allSprites.autoCull = false;
 
   // cursor("assets/icons/shotgun.png");
 
@@ -161,7 +163,7 @@ function setup() {
   //entity manager
   entityManager = new YUKA.EntityManager();
 
-  player = new Sprite(1500, 1800, 35, "octagon");
+  player = new Sprite(bg.width/2, bg.height/2, 35, "octagon");
   // player.w = 85;
   // player.h = 85;
   // player.diameter = 125;
@@ -608,12 +610,10 @@ function setup() {
 
   
   initBehaviors();
-  createEnemies(30);
+  createEnemies(15);
 
   
 
-  player.x = crates[0].x + 100;
-  player.y = crates[0].y + 100;
   initGuns();
 
   loadingAni = new Sprite(player.x, player.y, 48, 48);
@@ -623,7 +623,7 @@ function setup() {
   loadingAni.anis.frameDelay = 8;
   loadingAni.addAnis({
     loading: {row: 0, frames: 5},
-  })
+  });
   loadingAni.ani.scale = 1.3;
   loadingAni.ani.stop();
   loadingAni.visible = false;
@@ -1134,6 +1134,8 @@ function createGun(gun, x, y) {
           bullet.bounciness = 1;
           bullet.damage = this.damage;
           bullet.owner = this.owner;
+          bullet.stroke = "black";
+          bullet.strokeWeight = 0.3;
           bullet.update = () => {
             bullet.w = map(bullet.speed, 0, bullet.speed, 5, 6);
             bullet.scale *= 0.95;
@@ -1522,6 +1524,7 @@ function updateEnemies() {
         enemy.vehicle.steering.behaviors[1].active = false;
         enemy.vehicle.steering.behaviors[2].active = false;
         enemy.vehicle.steering.behaviors[3].active = true;
+        enemy.vehicle.steering.behaviors[0].active = true;
       }
       if(entityInVicinity) {
         let targetEntity = entities.find(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
@@ -1547,21 +1550,21 @@ function updateEnemies() {
       //   // enemy.gun.rotateTowards(enemy.direction);
       // }
       // if{
-        enemy.gun.shoot();
-        if(!enemy.vehicle.steering.behaviors[2].active || enemy.vehicle.steering.behaviors[2].evader !== targetEntity.vehicle) {
-          
-          // enemy.vehicle.steering.behaviors[2].offset.set(random(-200, 100), 0, random(-200, 200));
-          if(!enemy.vehicle.steering.behaviors[0].obstacles.includes(targetEntity.vehicle)){
-            enemy.vehicle.steering.behaviors[0].obstacles.push(targetEntity.vehicle);
-          }
-          // enemy.vehicle.maxSpeed = 80;
-          enemy.vehicle.steering.behaviors[2].evader = targetEntity.vehicle;
-          enemy.vehicle.steering.behaviors[2].active = true;
-          enemy.vehicle.steering.behaviors[3].active = false;
-          enemy.vehicle.steering.behaviors[1].active = true;
-          // enemy.maxSpeed = 120;
+      enemy.gun.shoot();
+      if(!enemy.vehicle.steering.behaviors[2].active || enemy.vehicle.steering.behaviors[2].evader !== targetEntity.vehicle) {
+        
+        // enemy.vehicle.steering.behaviors[2].offset.set(random(-200, 100), 0, random(-200, 200));
+        if(!enemy.vehicle.steering.behaviors[0].obstacles.includes(targetEntity.vehicle)){
+          enemy.vehicle.steering.behaviors[0].obstacles.push(targetEntity.vehicle);
         }
-        enemy.gun.rotateTowards(targetEntity, 0.1);
+        // enemy.vehicle.maxSpeed = 80;
+        enemy.vehicle.steering.behaviors[2].evader = targetEntity.vehicle;
+        enemy.vehicle.steering.behaviors[2].active = true;
+        enemy.vehicle.steering.behaviors[3].active = false;
+        enemy.vehicle.steering.behaviors[1].active = true;
+        // enemy.maxSpeed = 120;
+      }
+      enemy.gun.rotateTowards(targetEntity, 0.1);
       // }
     }
     // else if(enemy.angry){
@@ -1608,7 +1611,7 @@ function updateEnemies() {
     //   enemy.reached = false;
     // }
     enemy.evadeWeight -= 0.001;
-  };
+  }
 
   // console.log(enemies[0].rotation);
 }
@@ -1622,12 +1625,12 @@ function initBehaviors() {
   wanderBehavior.jitter = 2;
   wanderBehavior.radius = 1.5;
   wanderBehavior.distance = 1;
-  wanderBehavior.weight = 10;
+  wanderBehavior.weight = 3;
   wanderBehavior.active = true;
 
   obstacleAvoidanceBehavior = new YUKA.ObstacleAvoidanceBehavior(obstacles);
   obstacleAvoidanceBehavior.dBoxMinLength = 110;
-  obstacleAvoidanceBehavior.weight = 1;
+  obstacleAvoidanceBehavior.weight = 10;
   obstacleAvoidanceBehavior.brakingWeight = 0.5;
 }
 
