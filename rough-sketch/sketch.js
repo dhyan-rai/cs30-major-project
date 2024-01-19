@@ -632,11 +632,12 @@ function setup() {
 
 
   //zone overlapping
-  zoneTimer = new Timer(20000);
+  zoneTimer = new Timer(5000);
   zoneTimer.start();
-  zone = new Sprite(player.x, player.y, 80, "s");
-  zone.strokeWeight = 5;
+  zone = new Sprite(bg.width/2, bg.height/2, zoneRadius * 2, "s");
   zone.color = color(0, 0, 0, 0);
+  zone.stroke = "black";
+  zone.strokeWeight = 3;
   zone.layer = 50;
   zone.overlaps(entities);
   zone.overlaps(naturalResources);
@@ -673,6 +674,8 @@ function draw() {
   updateEnemies();
   updateInventory();
   updateCrates();
+
+  updateZoneRadius();
 
   entityManager.update(1/frameRate());
   
@@ -1437,6 +1440,9 @@ function createEnemyGun(owner, type) {
             bullet.w = map(bullet.speed, 0, bullet.speed, 5, 6);
             bullet.scale *= 0.99;
             bullet.rotation = bullet.direction;
+            if(this.collides(naturalResources)) {
+              this.remove();
+            }
           };
           bullet.overlaps(bullets);
         }
@@ -1761,6 +1767,7 @@ function updateZoneRadius() {
   if(zoneTimer.expired()) {
     if(zoneRadius >= 100) {
       zoneRadius -= 100;
+      zoneTimer.start();
     }
   }
 }
