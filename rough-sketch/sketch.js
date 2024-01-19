@@ -67,7 +67,7 @@ let crates, crate, crateSpriteSheet;
 
 
 //zone
-let zoneRadius = 1500, zoneTimer, zone;
+let zoneRadius = 1700, zoneTimer, zone;
 
 
 
@@ -808,6 +808,8 @@ function updateHealth() {
 
   if(player.health <= 0) {
     world.autoStep = false;
+    allSprites.visible = false;
+    background(0);
   }
 
   bullets.forEach(function(bullet){
@@ -1215,7 +1217,7 @@ function createGun(gun, x, y) {
         bullet.diameter = 6;
         bullet.color = "black";
         bullet.direction = this.rotation;
-        bullet.speed = random(10, 12);
+        bullet.speed = random(12, 14);
         bullet.collider = "d";
         bullet.layer = 1;
         bullet.mass = 0;
@@ -1299,13 +1301,14 @@ function createGun(gun, x, y) {
         bullet.diameter = 6;
         bullet.color = "black";
         bullet.direction = this.rotation;
-        bullet.speed = random(10, 12);
+        bullet.speed = random(13, 15);
         bullet.collider = "d";
         bullet.layer = 1;
         bullet.mass = 0;
         bullet.overlaps(bullets);
         bullet.owner = this.owner;
         bullet.damage = this.damage;
+        bullet.bounciness = 1;
         this.ammo -= 1;
         // console.log(bullet.life)
         // this.bulletArray.push(bullet);
@@ -1576,6 +1579,7 @@ function updateEnemies() {
       enemy.targetEntity = undefined;
       enemy.vehicle.steering.behaviors[2].active = false;
       enemy.vehicle.steering.behaviors[1].active = true;
+      enemy.vehicle.steering.behaviors[3].active = false;
       enemy.gun.rotateTowards(enemy.direction);
       // console.log()
       
