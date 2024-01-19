@@ -6,7 +6,7 @@ let obstacle;
 let maxForce = 220;
 let aheadVect;
 let avoidanceForce;
-let boundingCircle
+let boundingCircle;
 
 
 function setup() {

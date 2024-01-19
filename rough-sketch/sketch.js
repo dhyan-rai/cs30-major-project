@@ -346,7 +346,7 @@ function setup() {
 
   //walls
   walls1 = new naturalResources.Group();
-  walls1.img = wallImg1
+  walls1.img = wallImg1;
   walls1.tile = "w";
 
 
@@ -909,18 +909,18 @@ function initGuns() {
 
 function updateGui() {
   // box1.x = player.x + 290;
-  box1.x = player.x + width/2 - 400;
+  box1.x = player.x + width/2 - 420;
   box1.y = player.y + height/2 - 150;
   // box1.x += player.vel.x + 3;
   // box1.y += player.vel.y + 3;
 
   // box2.x = player.x + 370;
-  box2.x = player.x + width/2 - 325;
+  box2.x = player.x + width/2 - 345;
   box2.y = player.y + height/2 - 150;
 
   // box3.x = player.x + 450;
   // box3.y = player.y + 210;
-  box3.x = player.x + width/2 - 250;
+  box3.x = player.x + width/2 - 270;
   box3.y = player.y + height/2 - 150;
 
   if(player.activeSlot === player.slot1) {
@@ -1754,7 +1754,7 @@ function updateCrates() {
         crate.changeAni("idle");
       }
     }
-  };
+  }
 }
 
 function updateZoneRadius() {
