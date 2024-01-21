@@ -48,6 +48,9 @@ let ball, extraCanvas;
 
 //gui elements
 let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg, loadingAniSpriteSheet, loadingAni;
+let shotgunAmmoCount, pistolAmmoCount, sniperAmmoCount;
+let shotgunAmmoIcon, pistolAmmoIcon, sniperAmmoIcon;
+
 
 //pathfinding vars
 let grid, referenceBoxes;
@@ -63,12 +66,13 @@ let shotgunAmmos, sniperAmmos, pistolAmmos, shotgunAmmoImg, pistolAmmoImg, snipe
 let enemyGuns;
 
 //crates
-let crates, crate, crateSpriteSheet;
+let crates, crate, crateSpriteSheet, crateDetectors;
 
 
 //zone
-let zoneRadius = 1700, zoneTimer, zone;
+let zoneRadius = 2100, zoneTimer, zone, zoneText;
 
+//state variables
 
 
 //timers
@@ -111,6 +115,7 @@ function preload() {
   sniperAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-sniper.png");
   loadingAniSpriteSheet = loadImage("assets/inventory/loading-ani.png");
 
+
   // crateBrokenSheet = loadImage("assets/tile-images/crate-broken.png");
   crateSpriteSheet = loadImage("assets/tile-images/crates-clean.png");
 
@@ -136,6 +141,7 @@ function setup() {
 
 
   crates = new Group();
+  crateDetectors = new Group();
   // crates = new Group();
   crates.w = 64;
   crates.h = 64;
@@ -187,12 +193,19 @@ function setup() {
   player.inventory = [player.slot1, player.slot2, player.slot3];
   player.activeSlot = player.slot1;
   player.reloading = false;
+
+
+
+
   player.vehicle = new YUKA.MovingEntity();
   player.vehicle.boundingRadius = 80;
   player.vehicle.name = "player";
   entityManager.add(player.vehicle);
   obstacles.push(player.vehicle);
   entities.push(player);
+
+
+
 
   //for reloading
   player.reloading = false;
@@ -326,9 +339,9 @@ function setup() {
   pistolAmmos = new ammos.Group();
   sniperAmmos = new ammos.Group();
 
-  createAmmo("shotgun", player.x, player.y);
-  createAmmo("pistol", player.x, player.y + 100);
-  createAmmo("sniper", player.x, player.y - 100);
+  // createAmmo("shotgun", player.x, player.y);
+  // createAmmo("pistol", player.x, player.y + 100);
+  // createAmmo("sniper", player.x, player.y - 100);
   //gui
   initGui();
 
@@ -524,7 +537,7 @@ function setup() {
     crate.anis.damaged.scale = 1.7;
     crate.anis.idle.scale = 1.7;
     crate.removeColliders();
-    crate.detector = new Sprite(crate.x, crate.y, 32, 32);
+    crate.detector = new crateDetectors.Sprite(crate.x, crate.y, 32, 32);
     // crate.detector.debug = true;
     crate.detector.visible = false;
     crate.detector.collider = "s";
@@ -532,7 +545,7 @@ function setup() {
     crate.damageTaken = false;
     crate.damageAniRunning = false;
     crate.health = 5;
-    
+    crate.ammoDispensed = false;
     crate.entity = new YUKA.GameEntity();
     crate.entity.position.x = crate.x;
     crate.entity.position.z = crate.y;
@@ -632,16 +645,61 @@ function setup() {
 
 
   //zone overlapping
-  zoneTimer = new Timer(5000);
+  zoneTimer = new Timer(20000);
   zoneTimer.start();
   zone = new Sprite(bg.width/2, bg.height/2, zoneRadius * 2, "s");
   zone.color = color(0, 0, 0, 0);
   zone.stroke = "black";
   zone.strokeWeight = 3;
-  zone.layer = 50;
+  zone.layer = 40;
+  zone.decreasing = false;
+  zone.finishedDecreasing = false;
   zone.overlaps(entities);
   zone.overlaps(naturalResources);
   zone.overlaps(bullets);
+  zoneText = new Sprite();
+  zoneText.removeColliders();
+  zoneText.textSize = 18;
+  zoneText.textColor = "white";
+  zoneText.textStroke = "black";
+  zoneText.textStrokeWeight = 2.5;
+  zoneText.text = "Zone decreasing in: " + zoneTimer.getRemainingTime();
+
+  healthBar = new Sprite(player.x + 100, player.y, 30, 5);
+  healthBar.color = "red";
+  healthBar.layer = 40;
+  healthBar.overlaps(naturalResources);
+  healthBar.overlaps(entities);
+  healthBar.overlaps(bullets);
+  healthBar.rotationLock = true;
+  healthBar.offsetX = 0;
+  healthBar.originalPosX = player.x + 100;
+  healthBar.outline = new Sprite(healthBar.x, healthBar.y, healthBar.w, healthBar.h);
+  healthBar.outline.stroke = "black";
+  healthBar.outline.strokeWeight = 1.5;
+  healthBar.outline.color = color(0, 0, 0, 0);
+  healthBar.outline.overlaps(naturalResources);
+  healthBar.outline.overlaps(entities);
+  healthBar.outline.overlaps(bullets);
+  healthBar.outline.rotationLock = true;
+  // healthBar.offset.x= 100;
+
+  //sprites that display the ammo count
+  // shotgunAmmoCount = new Sprite();
+
+
+  //making screen turn red when player goes outside of zone
+    //screen turns red to indicate player outside of zone
+    player.dangerScreen = new Sprite(player.x, player.y, width, height);
+    player.dangerScreen.overlaps(entities);
+    player.dangerScreen.overlaps(naturalResources);
+    player.dangerScreen.overlaps(bullets);
+    player.dangerScreen.rotationLock = true;
+    player.dangerScreen.collider = "s";
+    player.dangerScreen.color = color(255, 0, 0, 40);
+    player.dangerScreen.visible = false;
+    player.dangerScreen.red = 255;
+    player.dangerScreen.alpha = 10;
 }
 
 function draw() {
@@ -659,30 +717,38 @@ function draw() {
   // console.log(player.x);
   updateGui();
   image(bg, 0 - player.vel.x, 0 - player.vel.y);
+
+  updateZoneRadius();
   // player.draw();
   updatePlayerMovement();
   updateHealth();
   // camera.moveTo(player, 1.5);
   
+
+  camera.x = player.x;
+  camera.y = player.y;
+
+
   // drawGrid();
   camera.off();
   // trackPlayer();
 
-  zone.radius = zoneRadius;
+
+
 
   updateGuns();
   updateEnemies();
   updateInventory();
   updateCrates();
 
-  updateZoneRadius();
+  // updateZoneRadius();
 
   entityManager.update(1/frameRate());
   
   loadingAni.x = player.x;
   loadingAni.y = player.y;
-  camera.x = player.x;
-  camera.y = player.y;
+
+  updateBulletCollisions();
   // console.log(player.ammos[0])
   
   // obstacleEntities.update(1);
@@ -800,14 +866,33 @@ function updatePlayerMovement() {
 }
 
 function updateHealth() {
-  // entities.forEach(function(entity) {
-  //   bullets.forEach(function(bullet){
-  //     if(entity.collides(bullet)){
-  //       entity.health -= bullet.damage;
 
-  //     }
-  //   })
-  // });
+  if(dist(player.x, player.y, bg.width/2, bg.height/2) > zoneRadius){
+    // console.log("hi");
+    player.health -= 0.05;
+    player.dangerScreen.visible = true;
+    if(player.dangerScreen.alpha < 50) {
+      player.dangerScreen.alpha += 0.2;
+    }
+
+  }
+  else{
+    // player.dangerScreen.visible = false;
+    // player.dangerScreen.color = color(0, 0, 0, 0);
+    if(player.dangerScreen.alpha > 0) {
+      player.dangerScreen.alpha -= 0.2;
+    }
+    else if(player.dangerScreen.alpha < 0) {
+      player.dangerScreen.alpha = 0;
+    }
+  }
+
+  bullets.forEach(function(bullet){
+    if(player.collides(bullet)){
+      player.health -= bullet.damage;
+      // bullet.remove();
+    }
+  });
 
   if(player.health <= 0) {
     world.autoStep = false;
@@ -815,12 +900,9 @@ function updateHealth() {
     background(0);
   }
 
-  bullets.forEach(function(bullet){
-    if(player.collides(bullet)){
-      player.health -= bullet.damage;
-      bullet.remove();
-    }
-  });
+  player.dangerScreen.position.set(player.x, player.y);
+  player.dangerScreen.color = color(player.dangerScreen.red, 0, 0, player.dangerScreen.alpha);
+
 }
 
 function keyTyped() {
@@ -880,6 +962,39 @@ function initGui() {
   selectionBox.removeColliders();
   selectionBox.scale = 2.2;
 
+  shotgunAmmoIcon = new Sprite()
+  shotgunAmmoIcon.img = shotgunAmmoImg;
+  shotgunAmmoIcon.removeColliders();
+  shotgunAmmoCount = new Sprite();
+  shotgunAmmoCount.removeColliders();
+  shotgunAmmoCount.textStroke = "black";
+  shotgunAmmoCount.textStrokeWeight = 0.8;
+  shotgunAmmoCount.text = "x" + player.ammos[0].ammoLeft;
+  shotgunAmmoIcon.scale *= 1.3;
+  shotgunAmmoCount.textSize *= 1.2;
+
+  pistolAmmoIcon = new Sprite()
+  pistolAmmoIcon.img = pistolAmmoImg;
+  pistolAmmoIcon.removeColliders();
+  pistolAmmoCount = new Sprite();
+  pistolAmmoCount.removeColliders();
+  pistolAmmoCount.textStroke = "black";
+  pistolAmmoCount.textStrokeWeight = 0.8;
+  pistolAmmoCount.text = "x" + player.ammos[2].ammoLeft;
+  pistolAmmoIcon.scale *= 1.3;
+  pistolAmmoCount.textSize *= 1.2;
+
+
+  sniperAmmoIcon = new Sprite()
+  sniperAmmoIcon.img = sniperAmmoImg;
+  sniperAmmoIcon.removeColliders();
+  sniperAmmoCount = new Sprite();
+  sniperAmmoCount.removeColliders();
+  sniperAmmoCount.textStroke = "black";
+  sniperAmmoCount.textStrokeWeight = 0.8;
+  sniperAmmoCount.text = "x" + player.ammos[1].ammoLeft;
+  sniperAmmoIcon.scale *= 1.3;
+  sniperAmmoCount.textSize *= 1.2;
 
 
 }
@@ -943,17 +1058,60 @@ function updateGui() {
     player.slot1.gun.icon.x = box1.x;
     player.slot1.gun.icon.y = box1.y;
     player.slot1.gun.icon.visible = true;
+    player.slot1.gun.ammoCount.text = player.slot1.gun.ammo;
+    player.slot1.gun.ammoCount.position.set(box1.x + 16, box1.y + 18);
+    player.slot1.gun.ammoCount.visible = true;
+    
   }
   if(player.slot2.isFull === true) {
     player.slot2.gun.icon.x = box2.x;
     player.slot2.gun.icon.y = box2.y;
     player.slot2.gun.icon.visible = true;
+    player.slot2.gun.ammoCount.text = player.slot2.gun.ammo;
+    player.slot2.gun.ammoCount.position.set(box2.x + 16, box2.y + 18);
+    player.slot2.gun.ammoCount.visible = true;
   }
   if(player.slot3.isFull === true) {
     player.slot3.gun.icon.x = box3.x;
     player.slot3.gun.icon.y = box3.y;
     player.slot3.gun.icon.visible = true;
+    player.slot3.gun.ammoCount.text = player.slot3.gun.ammo;
+    player.slot3.gun.ammoCount.position.set(box3.x + 16, box3.y + 18);
+    player.slot3.gun.ammoCount.visible = true;
   }
+
+  //displaying amount of ammo of each gun type that the player has
+
+  //shotgun
+  shotgunAmmoCount.text = "x" + player.ammos[0].ammoLeft;
+  // shotgunAmmoIcon.position.set(player.x - 360, player.y + 100);
+  // shotgunAmmoCount.position.set(shotgunAmmoIcon.x + 25, shotgunAmmoIcon.y);
+  shotgunAmmoIcon.position.set(player.x - 360, player.y + 145);
+  shotgunAmmoCount.position.set(shotgunAmmoIcon.x + 33, shotgunAmmoIcon.y);
+  
+  pistolAmmoCount.text = "x" + player.ammos[2].ammoLeft;
+  // pistolAmmoIcon.position.set(shotgunAmmoIcon.x, shotgunAmmoIcon.y + 35);
+  // pistolAmmoCount.position.set(pistolAmmoIcon.x + 25, pistolAmmoIcon.y);
+  pistolAmmoIcon.position.set(shotgunAmmoIcon.x + 75, shotgunAmmoIcon.y);
+  pistolAmmoCount.position.set(pistolAmmoIcon.x + 33, pistolAmmoIcon.y);
+
+  sniperAmmoCount.text = "x" + player.ammos[1].ammoLeft;
+  // sniperAmmoIcon.position.set(shotgunAmmoIcon.x, shotgunAmmoIcon.y + 70);
+  // sniperAmmoCount.position.set(sniperAmmoIcon.x + 25, sniperAmmoIcon.y);
+  sniperAmmoIcon.position.set(shotgunAmmoIcon.x + 150, shotgunAmmoIcon.y);
+  sniperAmmoCount.position.set(sniperAmmoIcon.x + 33, sniperAmmoIcon.y);
+
+  //updating healthbar as player and when player takes damage
+  let newWidth = map(player.health, 0, 20, 2, 30);
+  let widthDiff = (healthBar.w - newWidth) / 2;
+  healthBar.w = newWidth;
+  healthBar.originalPosX = player.x;
+  healthBar.offsetX += widthDiff;
+  healthBar.position.set(healthBar.originalPosX - healthBar.offsetX, player.y - 20);
+  healthBar.outline.position.set(healthBar.originalPosX, healthBar.y);
+
+
+
 }
 
 function updateInventory() {
@@ -1020,46 +1178,6 @@ function updateGuns() {
   }
 }
 
-let sideLength = 45/2;
-function drawGrid() {
-  // if(mouse.presses()){
-  //   if(mouseX >= 0 && mouseX <= 4400 && mouseY >= 0 && mouseY <= 4400) {
-  //     let xPos = round((mouseX+camera.x - width/2) / 22);
-  //     let yPos = round((mouseY+camera.y - height/2) / 22);
-  //     if(grid[yPos][xPos] === 1){
-  //       grid[yPos][xPos] = 0;
-  //     }
-
-  //     else {
-  //       grid[yPos][xPos] = 1;
-  //     }
-  //   }
-  // }
-  if(mouse.pressing()) {
-    let yVal = round((mouse.y - sideLength/2) / 22);
-    let xVal = round((mouse.x - sideLength/2) / 22);
-    if(grid[yVal] !== undefined) {
-      if(grid[yVal][xVal] === 1) {
-        grid[yVal][xVal] = 0;
-      }
-      else{
-        grid[yVal][xVal] = 1;
-      }
-    }
-  }
-  for(let i = 0; i < grid.length; i++) {
-    for(let j = 0; j < grid[i].length; j++) {
-      if(grid[i][j] === 1) {
-        // let bob = new referenceBoxes.Sprite(j*44/2 + sideLength/2, i*44/2 + sideLength/2, sideLength, sideLength, "n");
-        // bob.layer = 10;
-        rect(j*22 + sideLength/2, i*22 + sideLength/2, sideLength, sideLength);
-      }
-      // text(j*44/2 + sideLength/2, i*44/2 + sideLength/2, "hi")
-    }
-  }
-}
-
-
 function createGun(gun, x, y) {
   if(gun === "shotgun") {
     let shotgun = new guns.Sprite(x, y);
@@ -1078,6 +1196,17 @@ function createGun(gun, x, y) {
     shotgun.reloadBy = 8;
     shotgun.damage = 0.5;
 
+    //ammo count display
+    shotgun.ammoCount = new Sprite();
+    shotgun.ammoCount.removeColliders();
+    shotgun.ammoCount.color = color(0, 0, 0, 0);
+    shotgun.ammoCount.strokeWeight = 0;
+    shotgun.ammoCount.text = shotgun.ammo;
+    shotgun.ammoCount.textColor = "white";
+    shotgun.ammoCount.textStroke = "black";
+    shotgun.ammoCount.textStrokeWeight = 2.5;
+    shotgun.ammoCount.visible = false;
+    
   
     // shotgun.timer.endTimer();
   
@@ -1162,6 +1291,7 @@ function createGun(gun, x, y) {
       this.layer = 2;
       this.rotationSpeed = 0;
       this.icon.visible = false;
+      this.ammoCount.visible = false;
       this.img = shotgunIconImg;
       this.scale = 0.07;
       this.offset.x = -5;
@@ -1186,6 +1316,18 @@ function createGun(gun, x, y) {
     pistol.reloadBy = 12;
     pistol.reloadTimer = new Timer(2500);
   
+    //ammo count display
+    pistol.ammoCount = new Sprite();
+    pistol.ammoCount.removeColliders();
+    pistol.ammoCount.color = color(0, 0, 0, 0);
+    pistol.ammoCount.strokeWeight = 0;
+    pistol.ammoCount.text = pistol.ammo;
+    pistol.ammoCount.textColor = "white";
+    pistol.ammoCount.textStroke = "black";
+    pistol.ammoCount.textStrokeWeight = 1.9;
+    pistol.ammoCount.visible = false;
+    pistol.ammoCount.textSize *= 0.9;
+
     pistolIcon = new Sprite();
     pistolIcon.removeColliders();
     pistolIcon.img = pistolIconImg;
@@ -1246,6 +1388,7 @@ function createGun(gun, x, y) {
       this.layer = 2;
       this.rotationSpeed = 0;
       this.img = pistolIconImg;
+      this.ammoCount.visible = false;
       this.scale = 0.1;
       this.offset.x = 0;
       this.icon.visible = false;
@@ -1265,10 +1408,22 @@ function createGun(gun, x, y) {
     sniper.bullets = new bullets.Group();
     sniper.ammo = 5;
     sniper.reloadBy = 5;
-    sniper.damage = 10;
+    sniper.damage = 6;
     sniper.reloadTimer = new Timer(6000);
     sniper.owner = player;
 
+    //ammo count display
+    sniper.ammoCount = new Sprite();
+    sniper.ammoCount.removeColliders();
+    sniper.ammoCount.color = color(0, 0, 0, 0);
+    sniper.ammoCount.strokeWeight = 0;
+    sniper.ammoCount.text = sniper.ammo;
+    sniper.ammoCount.textColor = "white";
+    sniper.ammoCount.textStroke = "black";
+    sniper.ammoCount.textStrokeWeight = 2.2;
+    sniper.ammoCount.visible = false;
+
+    //gun icon for inventory and when unequipped
     sniperIcon = new Sprite();
     sniperIcon.removeColliders();
     sniperIcon.img = sniperIconImg;
@@ -1330,6 +1485,7 @@ function createGun(gun, x, y) {
       this.layer = 2;
       this.rotationSpeed = 0;
       this.img = sniperIconImg;
+      this.ammoCount.visible = false;
       this.scale = 0.08;
       this.offset.x = 0;
       this.icon.visible = false;
@@ -1352,6 +1508,14 @@ function createAmmo(gunType, x, y) {
       gunAmmo.ammoLeft += 8;
       this.remove();
     };
+    shotgunAmmo.speed = 0.5;
+    shotgunAmmo.direction = random(360);
+    
+    shotgunAmmo.update = () => {
+      shotgunAmmo.speed *= 0.975;
+    }
+
+    return shotgunAmmo;
   }
   else if(gunType === "pistol") {
     let pistolAmmo = new shotgunAmmos.Sprite(x, y);
@@ -1367,6 +1531,13 @@ function createAmmo(gunType, x, y) {
       gunAmmo.ammoLeft += 12;
       this.remove();
     };
+    pistolAmmo.speed = 0.5;
+    pistolAmmo.direction = random(360);
+    
+    pistolAmmo.update = () => {
+      pistolAmmo.speed *= 0.975;
+    }
+    return pistolAmmo;
   }
   else if(gunType === "sniper") {
     let sniperAmmo = new sniperAmmos.Sprite(x, y);
@@ -1382,6 +1553,13 @@ function createAmmo(gunType, x, y) {
       gunAmmo.ammoLeft += 5;
       this.remove();
     };
+    sniperAmmo.speed = 0.5;
+    sniperAmmo.direction = random(360);
+    
+    sniperAmmo.update = () => {
+      sniperAmmo.speed *= 0.975;
+    }
+    return sniperAmmo;
   }
 }
 
@@ -1403,7 +1581,7 @@ function createEnemyGun(owner, type) {
     shotgun.x = owner.x;
     shotgun.y = owner.y;
     shotgun.damage = 0.5;
-    shotgun.timer = new Timer(random(500, 1000));
+    shotgun.timer = new Timer(random(600, 1000));
     
     // shotgun.rotateTowards(mouse, 1.2, 1);
     shotgun.rotation = owner.rotation;
@@ -1492,6 +1670,49 @@ function createEnemyGun(owner, type) {
     };
     return pistol;
   }
+
+  if(type === "sniper") {
+    sniper = new enemyGuns.Sprite(owner.x, owner.y);
+    sniper.removeColliders();
+    sniper.img = sniperImg;
+    sniper.gunType = "sniper";
+    sniper.owner = owner;
+    sniper.range = 120;
+    sniper.len = 61;
+    sniper.bullets = new bullets.Group();
+    sniper.layer = 6;
+    sniper.offset.x = 35;
+    sniper.scale = 0.4;
+    sniper.scale.y = 0.5;
+    sniper.damage = 6;
+    sniper.timer = new Timer(random(1000, 1300));
+
+    sniper.shoot = function() {
+      if(this.timer.expired()){
+        let bulletTemp = p5.Vector.fromAngle(radians(this.rotation), this.len);
+        let gunPosTemp = createVector(this.x, this.y);
+        let bulletPos = p5.Vector.add(bulletTemp, gunPosTemp);
+    
+        // let bullet = new bullets.Sprite(bulletPos.x, bulletPos.y);
+        let bullet = new this.bullets.Sprite(bulletPos.x, bulletPos.y);
+        
+        bullet.life = this.range;
+        bullet.diameter = 6;
+        bullet.color = "black";
+        bullet.direction = this.rotation;
+        bullet.speed = random(13, 15);
+        bullet.collider = "d";
+        bullet.layer = 1;
+        bullet.mass = 0;
+        bullet.damage = this.damage;
+        bullet.bounciness = 1;
+        bullet.owner = this.owner;
+        bullet.overlaps(bullets);
+        this.timer.start();
+      }
+    };
+    return sniper;
+  }
 }
 
 
@@ -1542,6 +1763,9 @@ function updateEnemies() {
       }
       else{
         enemy.gun.rotateTowards(enemy.direction);
+        if(zone.finishedDecreasing) {
+          enemy.health -= 0.08;
+        }
       }
     }
     
@@ -1596,7 +1820,7 @@ function updateEnemies() {
       if(enemy.collides(bullet)){
         enemy.health -= bullet.damage;
         enemy.evadeWeight += 1;
-        bullet.remove();
+        // bullet.remove();
         // enemy.angry = true;
         // enemy.vehicle.steering.behaviors[2].evader = bullet.owner.vehicle;
         // enemy.vehicle.steering.behaviors[2].active = true;
@@ -1647,7 +1871,7 @@ function initBehaviors() {
 function createEnemies(num) {
   for(let i = 0; i < num; i++) {
     let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
-    enemy.gun = createEnemyGun(enemy, random(["pistol", "shotgun"]));
+    enemy.gun = createEnemyGun(enemy, random(["pistol", "shotgun", "sniper"]));
     enemy.rotationLock = true;
     // enemy.goalPoint = enemy.position.copy();
     enemy.reached = true;
@@ -1719,6 +1943,8 @@ function createEnemies(num) {
 function updateCrates() {
   for(let i = crates.length - 1; i >= 0; i--){
     let crate = crates[i];
+
+
     if(crate.health <= 0) {
       if(crate.ani.name !== "broken"){
         crate.changeAni("broken");
@@ -1732,18 +1958,39 @@ function updateCrates() {
         }
         
       }
+      if(crate.ani.frame === 3 && !crate.ammoDispensed) {
+        createAmmo(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
+        createAmmo(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
+        crate.ammoDispensed = true;
+      }
       if(crate.ani.frame === 6) {
         // crate.detector.remove();
         crate.remove();
-        createAmmo(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
-        createAmmo(random(["shotgun", "sniper", "pistol"]), crate.x + random(-20, 20), crate.y + random(-20, 20));
       }
     }
     else {
-      if(crate.detector.collides(bullets)) {
-        crate.damageTaken = true; 
-        crate.health -= 1;
-      }
+      let currentTime, prevTime;
+      // bullets.forEach(function(bullet){
+        if(crate.detector.collides(bullets)) {
+          crate.damageTaken = true; 
+          crate.health -= 1;
+        }
+      // })
+      // if {
+        if(crate.detector.collides(player) && player.speed > 3) {
+          currentTime = frameCount;
+          if(prevTime && currentTime - prevTime >= 1200) {
+            crate.damageTaken = true; 
+            crate.health -= 1;
+            prevTime = currentTime;
+          }
+          else if (prevTime === undefined){
+            crate.damageTaken = true; 
+            crate.health -= 1;
+            prevTime = currentTime;
+          }
+        }
+      // }
   
       if(crate.damageTaken) {
         crate.changeAni("damaged");
@@ -1761,13 +2008,58 @@ function updateCrates() {
       }
     }
   }
+
+  for(let i = bullets.length - 1; i >= 0; i--) {
+    let bullet = bullets[i];
+    if(bullet.collides(crateDetectors)){
+      bullet.remove();
+    }
+  }
 }
 
 function updateZoneRadius() {
-  if(zoneTimer.expired()) {
-    if(zoneRadius >= 100) {
-      zoneRadius -= 100;
+  if(zoneTimer.expired() && !zone.decreasing && zoneRadius > 500) {
+    zone.decreasing = true;
+  }
+  else if(zoneRadius <= 500) {
+    zoneText.visible = false;
+    zone.finishedDecreasing = true;
+  }
+  
+  if(zone.decreasing){
+    if(zoneRadius - zone.radius <= 200) {
+      if(zoneRadius > 500) {
+        zone.radius -= 1;
+        zoneText.text = "Zone decreasing"
+      }
+      else {
+        zoneRadius = zone.radius;
+        zone.decreasing = false;
+        zoneText.visible = false;
+      }
+    }
+    else{
+      zoneRadius = zone.radius;
+      zone.decreasing = false;
       zoneTimer.start();
+    }
+
+  }
+  else{
+    zoneText.text = "Zone decreasing in: " + floor(zoneTimer.getRemainingTime() / 1000);
+  }
+
+  zoneText.position.set(player.x, player.y - 180);
+
+  // zone.radius = zoneRadius;
+}
+
+function updateBulletCollisions() {
+  //all the bullet collisions
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    let bullet = bullets[i];
+    if(bullet.collides(naturalResources) || bullet.collides(entities)) {
+      bullet.remove();
     }
   }
 }

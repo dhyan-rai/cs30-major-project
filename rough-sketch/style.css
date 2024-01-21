@@ -6,3 +6,12 @@ html, body {
 canvas {
   display: block;
 }
+
+#p5_loading {
+  font-size: 100px;
+  color: #333;
+  padding: 20px;
+  background-color: #ff0000;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+}
