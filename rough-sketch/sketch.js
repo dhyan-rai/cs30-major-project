@@ -8,13 +8,10 @@
 
 
 let bg, bgGround, bgResources;
-// let player;
-// let obstacle1, obstacle2, obstacle3, obstacle4;
-// let obstacles = [obstacle1, obstacle2, obstacle3, obstacle4];
 let obstacles = [];
 let guns;
 let globalBullets = [];
-let walls, wallImg;
+// let walls, wallImg;
 let tileMap;
 let camOffsetX, camOffsetY;
 let keys = new Set();
@@ -24,6 +21,8 @@ let taigaTrees, taigaTreeImg, stones, yellowTrees, yellowTreeImg, bigRocks, bigR
 let flowerBaskets, flowerBasketImg;
 let naturalResources;
 let walls1, wallImg1;
+let wallRowTop, wallRowTopImg;
+let walls, wallsImg;
 
 //entities
 let enemies, player, entities;
@@ -31,7 +30,6 @@ let enemies, player, entities;
 
 //bullets
 let bullets, ammos;
-// let shotgunAmmoImg, sniperAmmoImg, pistolAmmoImg;
 
 //initializing guns
 let shotgun, pistol, sniper;
@@ -51,6 +49,9 @@ let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, select
 let shotgunAmmoCount, pistolAmmoCount, sniperAmmoCount;
 let shotgunAmmoIcon, pistolAmmoIcon, sniperAmmoIcon;
 let panelImage, panel;
+let startScreen, startScreenImg;
+let deathScreen, deathScreenImg;
+let winScreen, winScreenImg;
 
 
 //pathfinding vars
@@ -79,65 +80,56 @@ let gameRunning = false, initiatingGame = false, onStartScreen = true;
 //timers
 
 function preload() {
-  // bgGround = loadImage("assets/test-maps/tile-map-ground-1.png");
-  // bgResources = loadImage("assets/test-maps/tile-map-resources-1.png")
-  
 
-  //loading in navmesh
-  loadJSON("mapdata.json", function(data){
-    grid = data.obstacles;
-  });
+  //loading in images
 
-
-  
-
-
-  //textures
+  //background image
   bg = loadImage("assets/test-maps/base-layer-1.png");
-  wallImg = loadImage("assets/wall.png");
+
+  //loading in tile images
   taigaTreeImg = loadImage("assets/tile-images/taiga_tree.png");
   bigRockImg = loadImage("assets/tile-images/big-rock.png");
   yellowTreeImg = loadImage("assets/tile-images/yellow-tree.png");
   flowerBasketImg = loadImage("assets/tile-images/flower-basket.png");
   smallRockImg = loadImage("assets/tile-images/small-rock.png");
+  wallsImg = loadImage("assets/tile-images/walls-zoom-400.png");
+  crateSpriteSheet = loadImage("assets/tile-images/crates-clean.png");
+
+  //loading in gun assets
   shotgunImg = loadImage("assets/gun-assets/topdown-images/shotgun-4.png");
   pistolImg = loadImage("assets/gun-assets/topdown-images/pistol-2.png");
   pistolIconImg = loadImage("assets/gun-assets/icons/pistol.png");
   sniperImg = loadImage("assets/gun-assets/topdown-images/sniper.png");
   sniperIconImg = loadImage("assets/gun-assets/icons/sniper2.png");
   shotgunIconImg = loadImage("assets/gun-assets/icons/shotgun.png");
+
+  //loading in gui assets
   box1Img = loadImage("assets/inventory/inventory-box-blue.png");
   selectionBoxImg = loadImage("assets/inventory/selection-box.png");
-  wallImg1 = loadImage("assets/tile-images/wall-image-1.png");
+  loadingAniSpriteSheet = loadImage("assets/inventory/loading-ani.png");
 
-  //gui
-  // panelImage = loadImage("assets/inventory/panel.png");
-  // panelImage = loadImage("assets/inventory/ammo-panel.png");
+
+  //screens
+  startScreenImg = loadImage("assets/start-screen-image.png");
+  deathScreenImg = loadImage("assets/death-screen-img.png");
+  winScreenImg = loadImage("assets/win-screen-img.png");
+
+
 
   //ammo images
   shotgunAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-shotgun.png");
   pistolAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-pistol.png");
   sniperAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-sniper.png");
-  loadingAniSpriteSheet = loadImage("assets/inventory/loading-ani.png");
-
-
-  // crateBrokenSheet = loadImage("assets/tile-images/crate-broken.png");
-  crateSpriteSheet = loadImage("assets/tile-images/crates-clean.png");
-
-
-  
-  // crates.anis.frameDelay = 8;
-  // shotgunAmmoImg = loadImage()
 
 }
 
 function setup() {
 
-  // frameRate(60);
+
   rectMode(CENTER);
   angleMode(DEGREES);
   noStroke();
-  textFont("Athelas");
+  textFont("Comic Sans MS");
   allSprites.autoCull = false;
 
   // cursor("assets/icons/shotgun.png");
@@ -154,19 +146,6 @@ function setup() {
   crates.h = 64;
   crates.tile = "c";
   
-  //zone
-
-
-  // for(let i = 0; i < grid.length; i++) {
-  //   for(let j = 0; j < grid[i].length; j++) {
-  //     let sideLength = 45/2;
-  //     if(grid[i][j] === 1) {
-  //       let bob = new referenceBoxes.Sprite(j*44/2 + sideLength/2, i*44/2 + sideLength/2, sideLength, sideLength, "n");
-  //       bob.layer = 10;
-  //     }
-  //     // text(j*44/2 + sideLength/2, i*44/2 + sideLength/2, "hi")
-  //   }
-  // }
 
   new Canvas(windowWidth, windowHeight);
 
@@ -209,18 +188,27 @@ function setup() {
 
 
 
-
+  //wall rows
+  wallsImg.width *= 0.689;
+  wallsImg.height *= 0.687;
+  walls = new Sprite();
+  walls.img = wallsImg;
+  walls.removeColliders();
+  walls.collider = 's';
+  walls.position.set(wallsImg.width/2 - 5, wallsImg.height/2 - 40);
+  walls.addCollider(-walls.w/2 + 20, 20, 20, walls.height - 20);
+  walls.addCollider(2180, 20, 20, walls.height - 20);
+  walls.addCollider(0, -wallsImg.height / 2 + 65, wallsImg.width - 20, 20);
+  walls.addCollider(0, wallsImg.height / 2 - 33, wallsImg.width - 20, 20);
+  walls.layer = -1;
+  // walls.debug = true;
+  // wallRowTop.scale *= 0.6;
 
   //tilemap
   naturalResources = new Group();
   naturalResources.collider = "s";
   naturalResources.bounciness = 0;
 
-
-  //walls
-  walls1 = new naturalResources.Group();
-  walls1.img = wallImg1;
-  walls1.tile = "w";
 
 
   //tree tiles
@@ -251,9 +239,9 @@ function setup() {
 
   tileMap = new Tiles(
     [
-      ".wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww........................................................................................",
-      ".....c..................................t......................................................................................",
-      "............................................................c..................................................................",
+      "...............................................................................................................................",
+      "........................................t......................................................................................",
+      "...............................................................................................................................",
       "...............................................................................................................................",
       "...............................................................................................................y...............",
       "..................b............................................................t...............................................",
@@ -321,7 +309,7 @@ function setup() {
       "......................................................t....................b...................................................",
       ".........b.....................................................................................................................",
       "...............................................................................................................................",
-      "...............................................................................................................................",
+      ".............................c.................................................................................................",
       "...............................................................................................................................",
       "................................................................................................................s..............",
       "........................................................................y......................................................",
@@ -329,7 +317,7 @@ function setup() {
       "........................t......................................................................................................",
       "...............................................................................................................................",
       "...............................................................................................................................",
-      "...............................................................................................................................",
+      "........................................c......................................................................................",
       "........................................................................f.....................................y................",
       "...............................................................................................................................",
       "............................................................................................s..................................",
@@ -416,12 +404,6 @@ function setup() {
     
   }
 
-  for(let wall of walls1) {
-    wall.removeColliders();
-    wall.addCollider(0, 45, 175, 175);
-    wall.layer = 0;
-    wall.scale = 0.2;
-  }
 
   for(let tree of taigaTrees) {
     tree.removeColliders();
@@ -481,11 +463,19 @@ function setup() {
   }
   
 
+  startScreenImg.width *= 1.1;
+  startScreenImg.height *= 1.1;
+  startScreen = new Sprite();
+  startScreen.img = startScreenImg;
+  startScreen.removeColliders();
+  startScreen.position.set(650, 650);
+
   
   initBehaviors();
   
   
-  camera.position.set(650, 650);
+  // camera.position.set(650, 650);
+  // camera.position.set(0, 0);
   // initGuns();
   // createEnemies(25);
 
@@ -532,11 +522,27 @@ function draw() {
     background(0);
     camera.on();
     image(bg, 0, 0);
-    camera.x += 0.1;
-    camera.y += 0.1;
+    // camera.x += 0.1;
+    // camera.y += 0.1;
+    // if(keyboard.presses("d")) {
+    //   camera.x += 200;
+    // }
+    // else if(keyboard.presses("a")) {
+    //   camera.x -= 200;
+    // }
+    // if(keyboard.presses("w")){
+    //   camera.y -= 200;
+    // }
+    // if(keyboard.presses("s")){
+    //   camera.y += 200;
+    // }
+    startScreen.x += 0.1;
+    startScreen.y += 0.1;
+    camera.x = startScreen.x;
+    camera.y = startScreen.y;
     camera.off();
 
-    if(mouse.presses()) {
+    if(keyboard.presses(" ")) {
       initiatingGame = true;
     }
 
@@ -579,7 +585,7 @@ let accel = 0.1;
 function updatePlayerMovement() {
   // console.log(keys);
   let maxSpd = 4;
-  if (keyIsPressed && [...keys].some(element => ["w", "a", "s", "d"].includes(element)) && !player.isDead) {
+  if (keyIsPressed && [...keys].some(element => ["w", "a", "s", "d"].includes(element)) && !player.isDead && !player.hasWon) {
     if (keyIsDown(87)) {
       // player.moveTowards(player.position.x, player.position.y - 0.5, spd);
       player.direction = -90;
@@ -660,7 +666,7 @@ function updatePlayerMovement() {
 
 function updateHealth() {
 
-  if(dist(player.x, player.y, bg.width/2, bg.height/2) > zone.radius){
+  if(dist(player.x, player.y, bg.width/2, bg.height/2) > zone.radius && !player.isDead && !player.hasWon){
     // console.log("hi");
     player.health -= 0.05;
     player.dangerScreen.visible = true;
@@ -681,7 +687,7 @@ function updateHealth() {
   }
 
   bullets.forEach(function(bullet){
-    if(player.collides(bullet)){
+    if(player.collides(bullet) && !player.hasWon){
       player.health -= bullet.damage;
       // bullet.remove();
     }
@@ -703,6 +709,8 @@ function updateHealth() {
     }
     healthBar.visible = false;
     healthBar.outline.visible = false;
+    deathScreen.position.set(player.x, player.y);
+    deathScreen.visible = true;
   }
 
   player.dangerScreen.position.set(player.x, player.y);
@@ -820,7 +828,7 @@ function initGui() {
   zone.color = color(0, 0, 0, 0);
   zone.stroke = "black";
   zone.strokeWeight = 3;
-  zone.layer = 40;
+  zone.layer = 23;
   zone.decreasing = false;
   zone.finishedDecreasing = false;
   zone.overlaps(entities);
@@ -864,6 +872,18 @@ function initGui() {
   player.dangerScreen.visible = false;
   player.dangerScreen.red = 255;
   player.dangerScreen.alpha = 10;
+
+  // deathScreenImg.width *= 1.1;
+  // deathScreenImg.height *= 1.1;
+  deathScreen = new Sprite();
+  deathScreen.img = deathScreenImg;
+  deathScreen.removeColliders();
+  deathScreen.visible = false;
+
+  winScreen = new Sprite();
+  winScreen.img = winScreenImg;
+  winScreen.removeColliders();
+  winScreen.visible = false;
 }
 
 function initGuns() {
@@ -894,19 +914,24 @@ function initGuns() {
 
 function updateGui() {
   // box1.x = player.x + 290;
-  box1.x = player.x + width/2 - 420;
-  box1.y = player.y + height/2 - 150;
+  // box1.x = player.x + width/2 - 420;
+  // box1.position.set(player.x + width/4, player.y + height/3.9);
+  // box1.y = player.y + height/2 - 150;
   // box1.x += player.vel.x + 3;
   // box1.y += player.vel.y + 3;
 
   // box2.x = player.x + 370;
-  box2.x = player.x + width/2 - 345;
-  box2.y = player.y + height/2 - 150;
-
+  // box2.x = player.x + width/2 - 345;
+  // box2.y = player.y + height/2 - 150;
+  
   // box3.x = player.x + 450;
   // box3.y = player.y + 210;
-  box3.x = player.x + width/2 - 270;
-  box3.y = player.y + height/2 - 150;
+  // box3.x = player.x + width/2 - 270;
+  // box3.y = player.y + height/2 - 150;
+  
+  box3.position.set(player.x + width/3.6, player.y + height/4.1);
+  box2.position.set(box3.x - 70, box3.y);
+  box1.position.set(box2.x - 70, box2.y);
 
   if(player.activeSlot === player.slot1) {
     selectionBox.x = box1.x;
@@ -953,7 +978,7 @@ function updateGui() {
   shotgunAmmoCount.text = "x" + player.ammos[0].ammoLeft;
   // shotgunAmmoIcon.position.set(player.x - 360, player.y + 100);
   // shotgunAmmoCount.position.set(shotgunAmmoIcon.x + 25, shotgunAmmoIcon.y);
-  shotgunAmmoIcon.position.set(player.x - 360, player.y + 145);
+  shotgunAmmoIcon.position.set(player.x - width/3.4, player.y + height/3.9);
   shotgunAmmoCount.position.set(shotgunAmmoIcon.x + 33, shotgunAmmoIcon.y);
   
   pistolAmmoCount.text = "x" + player.ammos[2].ammoLeft;
@@ -1051,7 +1076,7 @@ function updateGuns() {
   if (player.activeSlot.isFull === true) {
     player.activeSlot.gun.visible = true;
     player.activeSlot.gun.updateWhileEquipped();
-    if(mouse.presses() && !player.reloading && !player.isDead) {
+    if(mouse.presses() && !player.reloading && !player.isDead && !player.hasWon) {
       player.activeSlot.gun.shoot();
     }
   }
@@ -1146,7 +1171,7 @@ function createGun(gun, x, y) {
           bullet.speed = random(10, 13);
           bullet.collider = "d";
           bullet.layer = 1;
-          bullet.bounce = 0.8;
+          // bullet.bounce = 0.8;
           bullet.life = this.range + random(-5, 5);
           bullet.mass = 0;  
           bullet.bounciness = 1;
@@ -1496,10 +1521,10 @@ function createEnemyGun(owner, type) {
           bullet.speed = random(10, 13);
           bullet.collider = "d";
           bullet.layer = 1;
-          bullet.bounce = 0.8;
+          // bullet.bounce = 0.8;
           bullet.life = this.range + random(-5, 5);
           bullet.mass = 0;  
-          bullet.bounciness = 1;
+          bullet.bounciness = 0;
           bullet.owner = this.owner;
           bullet.damage = this.damage;
           bullet.update = () => {
@@ -1710,7 +1735,7 @@ function updateEnemies() {
     bullets.forEach(function(bullet){
       if(enemy.collides(bullet)){
         enemy.health -= bullet.damage;
-        enemy.evadeWeight += 1;
+        // enemy.evadeWeight += 1;
         // bullet.remove();
         // enemy.angry = true;
         // enemy.vehicle.steering.behaviors[2].evader = bullet.owner.vehicle;
@@ -1761,7 +1786,9 @@ function initBehaviors() {
 
 function createEnemies(num) {
   for(let i = 0; i < num; i++) {
-    let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
+    let enemy = new enemies.Sprite(random(bg.width - 150), random(bg.height - 150));
+    enemy.stroke = "black";
+    enemy.strokeWeight = 1.8;
     enemy.gun = createEnemyGun(enemy, random(["pistol", "shotgun", "sniper"]));
     enemy.rotationLock = true;
     // enemy.goalPoint = enemy.position.copy();
@@ -1902,12 +1929,12 @@ function updateCrates() {
     }
   }
 
-  for(let i = bullets.length - 1; i >= 0; i--) {
-    let bullet = bullets[i];
-    if(bullet.collides(crateDetectors)){
-      bullet.remove();
-    }
-  }
+  // for(let i = bullets.length - 1; i >= 0; i--) {
+  //   let bullet = bullets[i];
+  //   if(bullet.collides(crateDetectors)){
+  //     bullet.remove();
+  //   }
+  // }
 }
 
 function updateZoneRadius() {
@@ -1945,7 +1972,7 @@ Enemies left: ` + enemies.length;
 Enemies left: ` + enemies.length);
   }
 
-  zoneText.position.set(player.x, player.y - 165);
+  zoneText.position.set(player.x, player.y - height/3.5);
 
   // zone.radius = zoneRadius;
 }
@@ -1954,7 +1981,7 @@ function updateBulletCollisions() {
   //all the bullet collisions
   for (let i = bullets.length - 1; i >= 0; i--) {
     let bullet = bullets[i];
-    if(bullet.collides(naturalResources) || bullet.collides(entities)) {
+    if(bullet.collides(naturalResources) || bullet.collides(entities) || bullet.collides(crateDetectors)) {
       bullet.remove();
     }
   }
@@ -1962,7 +1989,9 @@ function updateBulletCollisions() {
 
 function initPlayer() {
   player = new Sprite(bg.width/2, bg.height/2, 35, "octagon");
-  player.color = "black";
+  player.color = "white";
+  player.stroke = "black";
+  player.strokeWeight = 2;
   player.mass = 1;
   player.collider = "d";
   player.bounciness = 0;
@@ -2063,24 +2092,28 @@ function initPlayer() {
 function updateGameState() {
   camera.on();
   background(10);
+  checkIfWon();
   updateGui();
   image(bg, 0 - player.vel.x, 0 - player.vel.y);
   updateZoneRadius();
   updatePlayerMovement();
   updateInventory();
+  updateEnemies();
   updateGuns();
   updateHealth();
+  updateCrates();
   updateBulletCollisions();
   camera.x = player.x;
   camera.y = player.y;
+
+  // camera.x = constrain(camera.x, 0, bg.width);
   camera.off();
-  updateEnemies();
-  updateCrates();
   entityManager.update(1/frameRate());
 
 }
 
 function initGame() {
+  startScreen.remove();
   initPlayer();
   createGun("sniper", player.x + 30, player.y + -50);
   createGun("shotgun", player.x + -74, player.y + 53);
@@ -2092,3 +2125,11 @@ function initGame() {
   initiatingGame = false;
   gameRunning = true;
 } 
+
+function checkIfWon() {
+  if(enemies.length === 0 && !player.isDead) {
+    player.hasWon = true;
+    winScreen.visible = true;
+    winScreen.position.set(player.x, player.y);
+  }
+}
