@@ -50,6 +50,7 @@ let ball, extraCanvas;
 let healthBar, box1, box1Img, box2, box2Img, box3, box3Img, selectionBox, selectionBoxImg, loadingAniSpriteSheet, loadingAni;
 let shotgunAmmoCount, pistolAmmoCount, sniperAmmoCount;
 let shotgunAmmoIcon, pistolAmmoIcon, sniperAmmoIcon;
+let panelImage, panel;
 
 
 //pathfinding vars
@@ -73,7 +74,7 @@ let crates, crate, crateSpriteSheet, crateDetectors;
 let zoneRadius = 2100, zoneTimer, zone, zoneText;
 
 //state variables
-
+let gameRunning = false, initiatingGame = false, onStartScreen = true;
 
 //timers
 
@@ -109,6 +110,10 @@ function preload() {
   selectionBoxImg = loadImage("assets/inventory/selection-box.png");
   wallImg1 = loadImage("assets/tile-images/wall-image-1.png");
 
+  //gui
+  // panelImage = loadImage("assets/inventory/panel.png");
+  // panelImage = loadImage("assets/inventory/ammo-panel.png");
+
   //ammo images
   shotgunAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-shotgun.png");
   pistolAmmoImg = loadImage("assets/gun-assets/ammo-images/ammo-pistol.png");
@@ -131,6 +136,8 @@ function setup() {
   // frameRate(60);
   rectMode(CENTER);
   angleMode(DEGREES);
+  noStroke();
+  textFont("Athelas");
   allSprites.autoCull = false;
 
   // cursor("assets/icons/shotgun.png");
@@ -169,140 +176,14 @@ function setup() {
   //entity manager
   entityManager = new YUKA.EntityManager();
 
-  player = new Sprite(bg.width/2, bg.height/2, 35, "octagon");
-  // player.w = 85;
-  // player.h = 85;
-  // player.diameter = 125;
-  // player.autoDraw = false;
-  // player.debug = true;
-  player.color = "black";
-  player.mass = 1;
-  player.collider = "d";
-  player.bounciness = 0;
-  player.rotationLock = true;
-  player.friction = 0;
-  player.drag = 0;
-  player.scale = 0.25;
-  player.layer = 5;
-  player.health = 20;
-  player.inventoryIsFull = false;
-  player.invSlot = 1;
-  player.slot1 = {isFull: false};
-  player.slot2 = {isFull: false};
-  player.slot3 = {isFull: false};
-  player.inventory = [player.slot1, player.slot2, player.slot3];
-  player.activeSlot = player.slot1;
-  player.reloading = false;
-
-
-
-
-  player.vehicle = new YUKA.MovingEntity();
-  player.vehicle.boundingRadius = 80;
-  player.vehicle.name = "player";
-  entityManager.add(player.vehicle);
-  obstacles.push(player.vehicle);
-  entities.push(player);
-
-
-
-
-  //for reloading
-  player.reloading = false;
-  player.reloadGun = function() {
-    if(this.activeSlot.gun.reloadTimer.expired()) {
-      player.reloading = false;
-      loadingAni.visible = false;
-    }
-    else {
-      
-      // if(player.activeSlot.gun.reloadTimer.getRemainingTime() === 1000){
-      let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
-      let ammosReloaded = floor(map(player.activeSlot.gun.reloadTimer.getRemainingTime(), player.activeSlot.gun.reloadTimer.duration, 0, 0, player.activeSlot.gun.reloadBy + 1));
-      player.current = ammosReloaded;
-
-      if(player.current !== player.prev) {
-        player.activeSlot.gun.ammo += 1;
-        currentAmmo.ammoLeft -= 1;
-      }
-
-      player.prev = player.current;
-      // }
-      // let timer = player.activeSlot.gun.reloadTimer;
-      let loadingFrame = floor(map(player.activeSlot.gun.reloadTimer.getRemainingTime(), player.activeSlot.gun.reloadTimer.duration, 0, 0, 5));
-      if(loadingAni.ani.frames[loadingFrame]) {
-        loadingAni.ani.frame = loadingFrame;
-      }
-
-    }
-  };
-
-  //reload animation
-
-  // loadingAni.spriteSheet = loadingAniSpriteSheet;
-  // loadingAni.addAnis = ({
-  //   loading: { row: 0, frames: 4},
-  // })
-  // loadingAni.img = loadingAniSpriteSheet;
-  // loadingAni.layer = 20;
-  // loadingAni.removeColliders();
-  // loadingAni.anis.frameDelay = 8;
-  
-  // loadingAni.anis.stop();
-  // loadingAni.visible = false;
-
-  class Ammo{
-    constructor(type, ammoLeft) {
-      this.type = type;
-      this.ammoLeft = ammoLeft;
-    }
-  }
-  
-  player.ammos = [new Ammo("shotgun", 0), new Ammo("sniper", 0), new Ammo("pistol", 0)];
-  
-  // player.reloadTimer = new Timer(4000);
 
 
 
 
 
-
-
-
-  player.equipGun = function(gun) {
-    if(this.activeSlot.isFull === true) {
-      // this.stashGun(this.activeSlot.gun);
-      for (let slot of this.inventory) {
-        if (slot.isFull === false) {
-          player.activeSlot = slot;
-          break;
-        }
-      }
-    }
-
-    gun.owner = this;
-    this.activeSlot.gun = gun;
-    this.activeSlot.isFull = true;
-    gun.isEquipped();
-
-    // this.inventory.push(gun);
-    // this.currentGun = gun;
-  };
-
-  player.unEquipGun = function() {
-    player.activeSlot.gun.isUnequipped();
-    player.activeSlot.isFull = false;
-    delete player.activeSlot.gun;
-    // console.log("whta")
-  };
-  // player.debug = true;
-  // player.img = "assets/ball-img.png";
-  
 
   //enemies
   enemies = new entities.Group();
-  // enemies.w = 72;
-  // enemies.h = 72;
   enemies.diameter = 90;
   enemies.mass = 40;
   enemies.collider = "d";
@@ -312,24 +193,11 @@ function setup() {
   enemies.drag = 0;
   enemies.scale = 0.25;
   enemies.layer = 5;
-  // enemy = new enemies.Sprite(50, 50);
-  // for(let i = 0; i < 20; i++) {
-  //   // let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
-  //   let enemy = new enemies.Sprite(random(bg.width), random(bg.height));
-  //   enemy.path = [{x: round((enemy.x - sideLength/2) / 22), y: round((enemy.y - sideLength/2) / 22)}]
-  //   enemy.startPos = enemy.path[0];
-  //   enemy.nextPoint = enemy.path[0];
-  //   enemy.reached = true;
-  //   enemy.moving = false;
-  //   enemy.testArr = [];
-  // }
 
   //creating gun
   guns = new Group();
   enemyGuns = new Group();
-  // guns.mass = 1000;
-  // guns.collider = "n";
-  // guns.equipped = false;
+
 
 
   //bullets
@@ -339,14 +207,6 @@ function setup() {
   pistolAmmos = new ammos.Group();
   sniperAmmos = new ammos.Group();
 
-  // createAmmo("shotgun", player.x, player.y);
-  // createAmmo("pistol", player.x, player.y + 100);
-  // createAmmo("sniper", player.x, player.y - 100);
-  //gui
-  initGui();
-
-  //guns creation
-  // initGuns();
 
 
 
@@ -600,9 +460,9 @@ function setup() {
   }
 
   // allSprites.autoDraw = false;
-  camera.zoom = 1.4;
-  camera.x = player.x;
-  camera.y = player.y;
+
+  // camera.x = player.x;
+  // camera.y = player.y;
 
 
   // player.autoDraw = false;
@@ -623,65 +483,25 @@ function setup() {
 
   
   initBehaviors();
-  createEnemies(15);
-
   
+  
+  camera.position.set(650, 650);
+  // initGuns();
+  // createEnemies(25);
 
-  initGuns();
+  // camera.zoom = 1.4;
 
-  loadingAni = new Sprite(player.x, player.y, 48, 48);
-  loadingAni.removeColliders();
-  // loadingAni.addAni("loading", loadingAniSpriteSheet, 5, 8);
-  loadingAni.spriteSheet = loadingAniSpriteSheet;
-  loadingAni.anis.frameDelay = 8;
-  loadingAni.addAnis({
-    loading: {row: 0, frames: 5},
-  });
-  loadingAni.ani.scale = 1.3;
-  loadingAni.ani.stop();
-  loadingAni.visible = false;
+  // initPlayer();
+  // createGun("sniper", player.x + 30, player.y + -50);
+  // createGun("shotgun", player.x + -74, player.y + 53);
+  // createGun("pistol", player.x + 83, player.y + 32);
+  // createEnemies(25);
+  // initGui();
   
   // loadingAni.ani.frame = 3;
 
 
-  //zone overlapping
-  zoneTimer = new Timer(20000);
-  zoneTimer.start();
-  zone = new Sprite(bg.width/2, bg.height/2, zoneRadius * 2, "s");
-  zone.color = color(0, 0, 0, 0);
-  zone.stroke = "black";
-  zone.strokeWeight = 3;
-  zone.layer = 40;
-  zone.decreasing = false;
-  zone.finishedDecreasing = false;
-  zone.overlaps(entities);
-  zone.overlaps(naturalResources);
-  zone.overlaps(bullets);
-  zoneText = new Sprite();
-  zoneText.removeColliders();
-  zoneText.textSize = 18;
-  zoneText.textColor = "white";
-  zoneText.textStroke = "black";
-  zoneText.textStrokeWeight = 2.5;
-  zoneText.text = "Zone decreasing in: " + zoneTimer.getRemainingTime();
 
-  healthBar = new Sprite(player.x + 100, player.y, 30, 5);
-  healthBar.color = "red";
-  healthBar.layer = 40;
-  healthBar.overlaps(naturalResources);
-  healthBar.overlaps(entities);
-  healthBar.overlaps(bullets);
-  healthBar.rotationLock = true;
-  healthBar.offsetX = 0;
-  healthBar.originalPosX = player.x + 100;
-  healthBar.outline = new Sprite(healthBar.x, healthBar.y, healthBar.w, healthBar.h);
-  healthBar.outline.stroke = "black";
-  healthBar.outline.strokeWeight = 1.5;
-  healthBar.outline.color = color(0, 0, 0, 0);
-  healthBar.outline.overlaps(naturalResources);
-  healthBar.outline.overlaps(entities);
-  healthBar.outline.overlaps(bullets);
-  healthBar.outline.rotationLock = true;
   // healthBar.offset.x= 100;
 
   //sprites that display the ammo count
@@ -690,95 +510,68 @@ function setup() {
 
   //making screen turn red when player goes outside of zone
     //screen turns red to indicate player outside of zone
-    player.dangerScreen = new Sprite(player.x, player.y, width, height);
-    player.dangerScreen.overlaps(entities);
-    player.dangerScreen.overlaps(naturalResources);
-    player.dangerScreen.overlaps(bullets);
-    player.dangerScreen.rotationLock = true;
-    player.dangerScreen.collider = "s";
-    player.dangerScreen.color = color(255, 0, 0, 40);
-    player.dangerScreen.visible = false;
-    player.dangerScreen.red = 255;
-    player.dangerScreen.alpha = 10;
+
+
+
+  // panel = new Sprite();
+  // panel.removeColliders();
+  // panel.img = panelImage;
+  // panel.layer = 10;
+  // panel.scale *= 0.65;
 }
 
 function draw() {
   // clear();
   
   
-  background(10);
-  noStroke();
-  camera.on();
-  
-  // console.log(enemies.length);
-  // crate[0].changeAni("broken")
+  if(gameRunning) {
+    updateGameState();
+  }
+  else {
+    
+    background(0);
+    camera.on();
+    image(bg, 0, 0);
+    camera.x += 0.1;
+    camera.y += 0.1;
+    camera.off();
 
-  
-  // console.log(player.x);
-  updateGui();
-  image(bg, 0 - player.vel.x, 0 - player.vel.y);
+    if(mouse.presses()) {
+      initiatingGame = true;
+    }
 
-  updateZoneRadius();
-  // player.draw();
-  updatePlayerMovement();
-  updateHealth();
-  // camera.moveTo(player, 1.5);
-  
+    if(initiatingGame) {
+      initGame();
+    }
 
-  camera.x = player.x;
-  camera.y = player.y;
-
-
-  // drawGrid();
-  camera.off();
-  // trackPlayer();
-
-
-
-
-  updateGuns();
-  updateEnemies();
-  updateInventory();
-  updateCrates();
-
-  // updateZoneRadius();
-
-  entityManager.update(1/frameRate());
-  
-  loadingAni.x = player.x;
-  loadingAni.y = player.y;
-
-  updateBulletCollisions();
-  // console.log(player.ammos[0])
-  
-  // obstacleEntities.update(1);
-  // console.log(enemies[0].vehicle.steering.behaviors); 
-  // console.log(enemies[0].targetEntity)
-  // console.log("camera: " + camera.x + ", player: " + player.x);
-  // console.log("player: " + player.x + ", box: " + box1.x);
-  // console.log("diff: " + (player.x - box1.x));
+    
+  }
 
 }
 
 function keyPressed() {
-  if(!player.reloading) {
-    if (key === "1") {
-      player.activeSlot = player.inventory[0];
+  if(gameRunning){
+    if(!player.reloading) {
+      if (key === "1") {
+        player.activeSlot = player.inventory[0];
+      }
+      if (key === "2") {
+        player.activeSlot = player.inventory[1];
+      }
+      if (key === "3") {
+        player.activeSlot = player.inventory[2];
+      }
     }
-    if (key === "2") {
-      player.activeSlot = player.inventory[1];
-    }
-    if (key === "3") {
-      player.activeSlot = player.inventory[2];
-    }
+  
+    keys.add(key);
   }
-
-  keys.add(key);
 
 }
 
 function keyReleased() {
-  keys.delete(key);
+  if(gameRunning) {
+    keys.delete(key);
+  }
 }
 
 let spd = 0;
@@ -786,7 +579,7 @@ let accel = 0.1;
 function updatePlayerMovement() {
   // console.log(keys);
   let maxSpd = 4;
-  if (keyIsPressed && [...keys].some(element => ["w", "a", "s", "d"].includes(element))) {
+  if (keyIsPressed && [...keys].some(element => ["w", "a", "s", "d"].includes(element)) && !player.isDead) {
     if (keyIsDown(87)) {
       // player.moveTowards(player.position.x, player.position.y - 0.5, spd);
       player.direction = -90;
@@ -867,7 +660,7 @@ function updatePlayerMovement() {
 
 function updateHealth() {
 
-  if(dist(player.x, player.y, bg.width/2, bg.height/2) > zoneRadius){
+  if(dist(player.x, player.y, bg.width/2, bg.height/2) > zone.radius){
     // console.log("hi");
     player.health -= 0.05;
     player.dangerScreen.visible = true;
@@ -895,9 +688,21 @@ function updateHealth() {
   });
 
   if(player.health <= 0) {
-    world.autoStep = false;
-    allSprites.visible = false;
-    background(0);
+    // world.autoStep = false;
+    // allSprites.visible = false;
+    // background(0);
+    if(entities.includes(player)) {
+      entities.splice(entities.indexOf(player), 1);
+    }
+    player.isDead = true;
+    player.speed = 0;
+    player.visible = false;
+    player.overlaps(allSprites);
+    if(player.activeSlot.isFull){
+      player.activeSlot.gun.visible = false;
+    }
+    healthBar.visible = false;
+    healthBar.outline.visible = false;
   }
 
   player.dangerScreen.position.set(player.x, player.y);
@@ -906,27 +711,23 @@ function updateHealth() {
 }
 
 function keyTyped() {
-  if(key === "o") {
-    camera.zoom += 0.2;
-  }
-  if(key === "p") {
-    camera.zoom -= 0.2;
-  }
-  if(key === "r") {
-    if(player.activeSlot.isFull) {
-      let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
-      if(currentAmmo && currentAmmo.ammoLeft > 0) {
-        // player.activeSlot.gun.ammo = 10;
-        // console.log("locked and loaded sir");
-        if(player.reloading === false){
-          // currentAmmo.ammoLeft -= 10;
-          player.activeSlot.gun.ammo = 0;
-          player.activeSlot.gun.reloadTimer.start();
-          player.reloading = true;
-          loadingAni.visible = true;
-          loadingAni.ani.frame = 0;
-          player.prev = 0;
-          player.current = 0;
+  if(gameRunning) {
+    if(key === "r") {
+      if(player.activeSlot.isFull) {
+        let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
+        if(currentAmmo && currentAmmo.ammoLeft > 0) {
+          // player.activeSlot.gun.ammo = 10;
+          // console.log("locked and loaded sir");
+          if(player.reloading === false){
+            // currentAmmo.ammoLeft -= 10;
+            player.activeSlot.gun.ammo = 0;
+            player.activeSlot.gun.reloadTimer.start();
+            player.reloading = true;
+            loadingAni.visible = true;
+            loadingAni.ani.frame = 0;
+            player.prev = 0;
+            player.current = 0;
+          }
         }
       }
     }
@@ -968,7 +769,8 @@ function initGui() {
   shotgunAmmoCount = new Sprite();
   shotgunAmmoCount.removeColliders();
   shotgunAmmoCount.textStroke = "black";
-  shotgunAmmoCount.textStrokeWeight = 0.8;
+  shotgunAmmoCount.textStrokeWeight = 3;
+  shotgunAmmoCount.textColor = "white";
   shotgunAmmoCount.text = "x" + player.ammos[0].ammoLeft;
   shotgunAmmoIcon.scale *= 1.3;
   shotgunAmmoCount.textSize *= 1.2;
@@ -979,7 +781,8 @@ function initGui() {
   pistolAmmoCount = new Sprite();
   pistolAmmoCount.removeColliders();
   pistolAmmoCount.textStroke = "black";
-  pistolAmmoCount.textStrokeWeight = 0.8;
+  pistolAmmoCount.textStrokeWeight = 3;
+  pistolAmmoCount.textColor = "white";
   pistolAmmoCount.text = "x" + player.ammos[2].ammoLeft;
   pistolAmmoIcon.scale *= 1.3;
   pistolAmmoCount.textSize *= 1.2;
@@ -991,12 +794,76 @@ function initGui() {
   sniperAmmoCount = new Sprite();
   sniperAmmoCount.removeColliders();
   sniperAmmoCount.textStroke = "black";
-  sniperAmmoCount.textStrokeWeight = 0.8;
+  sniperAmmoCount.textStrokeWeight = 3;
+  sniperAmmoCount.textColor = "white";
   sniperAmmoCount.text = "x" + player.ammos[1].ammoLeft;
   sniperAmmoIcon.scale *= 1.3;
   sniperAmmoCount.textSize *= 1.2;
 
 
+  //loading animation
+  loadingAni = new Sprite(player.x, player.y, 48, 48);
+  loadingAni.removeColliders();
+  loadingAni.spriteSheet = loadingAniSpriteSheet;
+  loadingAni.anis.frameDelay = 8;
+  loadingAni.addAnis({
+    loading: {row: 0, frames: 5},
+  });
+  loadingAni.ani.scale = 1.3;
+  loadingAni.ani.stop();
+  loadingAni.visible = false;
+
+  //zone 
+  zoneTimer = new Timer(20000);
+  zoneTimer.start();
+  zone = new Sprite(bg.width/2, bg.height/2, zoneRadius * 2, "s");
+  zone.color = color(0, 0, 0, 0);
+  zone.stroke = "black";
+  zone.strokeWeight = 3;
+  zone.layer = 40;
+  zone.decreasing = false;
+  zone.finishedDecreasing = false;
+  zone.overlaps(entities);
+  zone.overlaps(naturalResources);
+  zone.overlaps(bullets);
+  zoneText = new Sprite();
+  zoneText.removeColliders();
+  zoneText.textSize = 18;
+  zoneText.textColor = "white";
+  zoneText.textStroke = "black";
+  // zoneText.textStyle = 'Verdana';
+  zoneText.textStrokeWeight = 2.5;
+  zoneText.text = "Zone decreasing in: " + zoneTimer.getRemainingTime();
+
+  //initializing healthbar
+  healthBar = new Sprite(player.x + 100, player.y, 30, 5);
+  healthBar.color = "green";
+  healthBar.layer = 40;
+  healthBar.overlaps(naturalResources);
+  healthBar.overlaps(entities);
+  healthBar.overlaps(bullets);
+  healthBar.rotationLock = true;
+  healthBar.offsetX = 0;
+  healthBar.originalPosX = player.x + 100;
+  healthBar.outline = new Sprite(healthBar.x, healthBar.y, healthBar.w, healthBar.h);
+  healthBar.outline.stroke = "black";
+  healthBar.outline.strokeWeight = 1.5;
+  healthBar.outline.color = color(0, 0, 0, 0);
+  healthBar.outline.overlaps(naturalResources);
+  healthBar.outline.overlaps(entities);
+  healthBar.outline.overlaps(bullets);
+  healthBar.outline.rotationLock = true;
+
+  player.dangerScreen = new Sprite(player.x, player.y, width, height);
+  player.dangerScreen.overlaps(entities);
+  player.dangerScreen.overlaps(naturalResources);
+  player.dangerScreen.overlaps(bullets);
+  player.dangerScreen.rotationLock = true;
+  player.dangerScreen.collider = "s";
+  player.dangerScreen.color = color(255, 0, 0, 40);
+  player.dangerScreen.visible = false;
+  player.dangerScreen.red = 255;
+  player.dangerScreen.alpha = 10;
 }
 
 function initGuns() {
@@ -1008,14 +875,14 @@ function initGuns() {
   createGun("pistol", player.x + 200, player.y);
 
   //for all the guns
-  for (let gun of guns) {
-    gun.bulletArray = [];
-    // gun.offset.x = 25;
-    gun.bounciness = 0;
-    gun.friction = 0;
-    gun.drag = 0;
-    gun.rotationDrag = 0;
-  }
+  // for (let gun of guns) {
+  //   gun.bulletArray = [];
+  //   // gun.offset.x = 25;
+  //   gun.bounciness = 0;
+  //   gun.friction = 0;
+  //   gun.drag = 0;
+  //   gun.rotationDrag = 0;
+  // }
 
 }
 
@@ -1101,8 +968,10 @@ function updateGui() {
   sniperAmmoIcon.position.set(shotgunAmmoIcon.x + 150, shotgunAmmoIcon.y);
   sniperAmmoCount.position.set(sniperAmmoIcon.x + 33, sniperAmmoIcon.y);
 
+  // panel.position.set(pistolAmmoIcon.x + 10, pistolAmmoIcon.y);
+
   //updating healthbar as player and when player takes damage
-  let newWidth = map(player.health, 0, 20, 2, 30);
+  let newWidth = map(player.health, 0, 20, 1, 30);
   let widthDiff = (healthBar.w - newWidth) / 2;
   healthBar.w = newWidth;
   healthBar.originalPosX = player.x;
@@ -1110,6 +979,21 @@ function updateGui() {
   healthBar.position.set(healthBar.originalPosX - healthBar.offsetX, player.y - 20);
   healthBar.outline.position.set(healthBar.originalPosX, healthBar.y);
 
+  colorNumber = map(player.health, 0, 20, 1, 4);
+  switch(floor(colorNumber)){
+    case 3:
+      healthBar.color = "green";
+      break;
+    case 2:
+      healthBar.color = "yellow";
+      break;
+    case 1:
+      healthBar.color = "red";
+      break;
+  }
+
+  loadingAni.x = player.x;
+  loadingAni.y = player.y;
 
 
 }
@@ -1167,7 +1051,7 @@ function updateGuns() {
   if (player.activeSlot.isFull === true) {
     player.activeSlot.gun.visible = true;
     player.activeSlot.gun.updateWhileEquipped();
-    if(mouse.presses() && !player.reloading) {
+    if(mouse.presses() && !player.reloading && !player.isDead) {
       player.activeSlot.gun.shoot();
     }
   }
@@ -1305,7 +1189,7 @@ function createGun(gun, x, y) {
     pistol.layer = 2;
     pistol.bulletArray = [];
     pistol.gunType = "pistol";
-    pistol.range = 70;
+    pistol.range = 20;
     pistol.len = 39;
     pistol.img = pistolIconImg;
     pistol.scale = 0.1;
@@ -1370,7 +1254,11 @@ function createGun(gun, x, y) {
         bullet.bounciness = 1;
         bullet.owner = this.owner;
         bullet.overlaps(bullets);
+        bullet.update = () => {
+          bullet.scale *= 0.99;
+        }
         this.ammo -= 1;
+
         // console.log(bullet.life)
         // this.bulletArray.push(bullet);
       }
@@ -1635,7 +1523,7 @@ function createEnemyGun(owner, type) {
     pistol.img = pistolImg;
     pistol.gunType = "pistol";
     pistol.owner = owner;
-    pistol.range = 70;
+    pistol.range = 50;
     pistol.len = 39;
     pistol.bullets = new bullets.Group();
     pistol.layer = 6;
@@ -1665,6 +1553,9 @@ function createEnemyGun(owner, type) {
         bullet.bounciness = 1;
         bullet.owner = this.owner;
         bullet.overlaps(bullets);
+        bullet.update = () => {
+          bullet.scale *= 0.99;
+        }
         this.timer.start();
       }
     };
@@ -1749,7 +1640,7 @@ function updateEnemies() {
     // }
     let entityInVicinity = entities.some(entity => dist(enemy.x, enemy.y, entity.x, entity.y) < 350 && entity !== enemy);
 
-    if(dist(enemy.x, enemy.y, bg.width/2, bg.height/2) > zoneRadius){
+    if(dist(enemy.x, enemy.y, bg.width/2, bg.height/2) > zone.radius){
       if(!enemy.vehicle.steering.behaviors[3].active){
         enemy.vehicle.steering.behaviors[1].active = false;
         enemy.vehicle.steering.behaviors[2].active = false;
@@ -1939,7 +1830,7 @@ function createEnemies(num) {
     
   }
 }
-
+let currentTime, prevTime;
 function updateCrates() {
   for(let i = crates.length - 1; i >= 0; i--){
     let crate = crates[i];
@@ -1949,6 +1840,7 @@ function updateCrates() {
       if(crate.ani.name !== "broken"){
         crate.changeAni("broken");
         crate.detector.remove();
+        // crate.detector.collider = "n";
         entityManager.remove(crate.entity);
 
         //removing the obstacle for each enemy so they can walk through it
@@ -1966,10 +1858,11 @@ function updateCrates() {
       if(crate.ani.frame === 6) {
         // crate.detector.remove();
         crate.remove();
+        // crate.visible = false;
       }
     }
     else {
-      let currentTime, prevTime;
+
       // bullets.forEach(function(bullet){
         if(crate.detector.collides(bullets)) {
           crate.damageTaken = true; 
@@ -1979,7 +1872,7 @@ function updateCrates() {
       // if {
         if(crate.detector.collides(player) && player.speed > 3) {
           currentTime = frameCount;
-          if(prevTime && currentTime - prevTime >= 1200) {
+          if(prevTime && currentTime - prevTime >= 100) {
             crate.damageTaken = true; 
             crate.health -= 1;
             prevTime = currentTime;
@@ -2018,24 +1911,26 @@ function updateCrates() {
 }
 
 function updateZoneRadius() {
-  if(zoneTimer.expired() && !zone.decreasing && zoneRadius > 500) {
+  if(zoneTimer.expired() && !zone.decreasing && zone.radius > 500) {
     zone.decreasing = true;
   }
   else if(zoneRadius <= 500) {
-    zoneText.visible = false;
+    // zoneText.visible = false;
+    zoneText.text = "Enemies left: " + enemies.length;
     zone.finishedDecreasing = true;
   }
   
   if(zone.decreasing){
     if(zoneRadius - zone.radius <= 200) {
-      if(zoneRadius > 500) {
+      if(zone.radius > 500) {
         zone.radius -= 1;
-        zoneText.text = "Zone decreasing"
+        zoneText.text = `Zone decreasing
+Enemies left: ` + enemies.length;
       }
       else {
         zoneRadius = zone.radius;
         zone.decreasing = false;
-        zoneText.visible = false;
+        zoneText.text = "Enemies left: " + enemies.length;
       }
     }
     else{
@@ -2046,10 +1941,11 @@ function updateZoneRadius() {
 
   }
   else{
-    zoneText.text = "Zone decreasing in: " + floor(zoneTimer.getRemainingTime() / 1000);
+    zoneText.text = `Zone decreasing in: ` + (floor(zoneTimer.getRemainingTime() / 1000) + `
+Enemies left: ` + enemies.length);
   }
 
-  zoneText.position.set(player.x, player.y - 180);
+  zoneText.position.set(player.x, player.y - 165);
 
   // zone.radius = zoneRadius;
 }
@@ -2063,3 +1959,136 @@ function updateBulletCollisions() {
     }
   }
 }
+
+function initPlayer() {
+  player = new Sprite(bg.width/2, bg.height/2, 35, "octagon");
+  player.color = "black";
+  player.mass = 1;
+  player.collider = "d";
+  player.bounciness = 0;
+  player.rotationLock = true;
+  player.friction = 0;
+  player.drag = 0;
+  player.scale = 0.25;
+  player.layer = 5;
+  player.health = 20;
+  player.inventoryIsFull = false;
+  player.invSlot = 1;
+  player.slot1 = {isFull: false};
+  player.slot2 = {isFull: false};
+  player.slot3 = {isFull: false};
+  player.inventory = [player.slot1, player.slot2, player.slot3];
+  player.activeSlot = player.slot1;
+  player.reloading = false;
+  player.isDead = false;
+
+
+
+  player.vehicle = new YUKA.MovingEntity();
+  player.vehicle.boundingRadius = 80;
+  player.vehicle.name = "player";
+  entityManager.add(player.vehicle);
+  obstacles.push(player.vehicle);
+  entities.push(player);
+
+
+  player.reloading = false;
+  player.reloadGun = function() {
+    if(this.activeSlot.gun.reloadTimer.expired()) {
+      player.reloading = false;
+      loadingAni.visible = false;
+    }
+    else {
+      
+      // if(player.activeSlot.gun.reloadTimer.getRemainingTime() === 1000){
+      let currentAmmo = player.ammos.find((anAmmo) => anAmmo.type === player.activeSlot.gun.gunType);
+      let ammosReloaded = floor(map(player.activeSlot.gun.reloadTimer.getRemainingTime(), player.activeSlot.gun.reloadTimer.duration, 0, 0, player.activeSlot.gun.reloadBy + 1));
+      player.current = ammosReloaded;
+
+      if(player.current !== player.prev) {
+        player.activeSlot.gun.ammo += 1;
+        currentAmmo.ammoLeft -= 1;
+      }
+
+      player.prev = player.current;
+      // }
+      // let timer = player.activeSlot.gun.reloadTimer;
+      let loadingFrame = floor(map(player.activeSlot.gun.reloadTimer.getRemainingTime(), player.activeSlot.gun.reloadTimer.duration, 0, 0, 5));
+      if(loadingAni.ani.frames[loadingFrame]) {
+        loadingAni.ani.frame = loadingFrame;
+      }
+
+    }
+  };
+
+  player.equipGun = function(gun) {
+    if(this.activeSlot.isFull === true) {
+      // this.stashGun(this.activeSlot.gun);
+      for (let slot of this.inventory) {
+        if (slot.isFull === false) {
+          player.activeSlot = slot;
+          break;
+        }
+      }
+    }
+
+    gun.owner = this;
+    this.activeSlot.gun = gun;
+    this.activeSlot.isFull = true;
+    gun.isEquipped();
+
+    // this.inventory.push(gun);
+    // this.currentGun = gun;
+  };
+
+  player.unEquipGun = function() {
+    player.activeSlot.gun.isUnequipped();
+    player.activeSlot.isFull = false;
+    delete player.activeSlot.gun;
+    // console.log("whta")
+  };
+  // player.debug = true;
+  // player.img = "assets/ball-img.png";
+
+  class Ammo{
+    constructor(type, ammoLeft) {
+      this.type = type;
+      this.ammoLeft = ammoLeft;
+    }
+  }
+  
+  player.ammos = [new Ammo("shotgun", 0), new Ammo("sniper", 0), new Ammo("pistol", 0)];
+}
+
+function updateGameState() {
+  camera.on();
+  background(10);
+  updateGui();
+  image(bg, 0 - player.vel.x, 0 - player.vel.y);
+  updateZoneRadius();
+  updatePlayerMovement();
+  updateInventory();
+  updateGuns();
+  updateHealth();
+  updateBulletCollisions();
+  camera.x = player.x;
+  camera.y = player.y;
+  camera.off();
+  updateEnemies();
+  updateCrates();
+  entityManager.update(1/frameRate());
+
+}
+
+function initGame() {
+  initPlayer();
+  createGun("sniper", player.x + 30, player.y + -50);
+  createGun("shotgun", player.x + -74, player.y + 53);
+  createGun("pistol", player.x + 83, player.y + 32);
+  createEnemies(25);
+  initGui();
+  camera.position.set(player.x, player.y);
+  camera.zoom = 1.4;
+  initiatingGame = false;
+  gameRunning = true;
+} 
