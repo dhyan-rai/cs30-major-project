@@ -12,15 +12,8 @@
 // - using tile set with obstacles with custom colliders
 // - felixible player inventory
 
-let bg, bgGround, bgResources;
-let obstacles = [];
-let guns;
-let globalBullets = [];
-let tileMap;
-let camOffsetX, camOffsetY;
-let keys = new Set();
-
 //tiles
+let tileMap;
 let taigaTrees,
   taigaTreeImg,
   stones,
@@ -35,6 +28,8 @@ let naturalResources;
 let walls1, wallImg1;
 let wallRowTop, wallRowTopImg;
 let walls, wallsImg;
+let obstacles = [];
+let bg;
 
 //entities
 let enemies, player, entities;
@@ -43,6 +38,7 @@ let enemies, player, entities;
 let bullets, ammos;
 
 //initializing guns
+let guns;
 let shotgun, pistol, sniper;
 let shotgunImg;
 let pistolImg;
@@ -102,6 +98,9 @@ let zoneRadius = 2100,
 let gameRunning = false,
   initiatingGame = false,
   onStartScreen = true;
+
+//set of keys pressed
+let keys = new Set();
 
 function preload() {
   //loading in images
